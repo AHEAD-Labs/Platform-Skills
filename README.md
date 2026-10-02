@@ -62,6 +62,39 @@ The initial reference set is `ahead-skill-package-builder`, the platform skills 
 4. **Maintained**: later changes, including UAT feedback, come in as pull requests here.
 5. **Manually published**: the team publishes the approved version to Claude and/or Glean. Publishing is separate from merging.
 
+## Initial Landing Set
+
+The first planned population of this repository is the set of skills already launched through the initial Enterprise GPT Skills rollout on September 28, 2026:
+
+- `story-writing-for-presentations`
+- `outlook-event-creation`
+- `ahead-meeting-prep-and-notes`
+- `ahead-weekly-recap`
+- `ahead-skill-package-builder`
+- `ahead-daily-digest`
+
+These were launched in Glean and were also announced as available to users with Claude access.
+
+Listing a skill here does **not** mean its artifacts have been imported. This section records what is expected to land. The approved artifacts are added later, one pull request at a time.
+
+- Each landed skill should preserve its version history and provenance, so a reviewer can see where the artifact came from and what was approved.
+- Once an artifact is reviewed and merged, `main` in this repository is the approved source for that skill.
+- Availability in Glean or Claude is separate from the repository source of truth. A merge does not publish anything.
+- Updates based on UAT or user feedback come back through a new branch and pull request, not through silent changes to deployed copies.
+
+### Landing workflow
+
+```mermaid
+flowchart TD
+    A["Existing launched skill"] --> B["Approved artifact supplied"]
+    B --> C["Platform-Skills branch"]
+    C --> D["Pull request"]
+    D --> E["Peer review"]
+    E --> F["Merge to main"]
+    F --> G["Platform-Skills is the canonical<br/>approved repository version"]
+    G --> H["Manual publish / update<br/>to Glean and/or Claude as needed"]
+```
+
 ## Version history
 
 Git is the version history. Each approved change is a merged pull request, so the diff, the reviewer, and the reasoning stay attached to the change. To see what changed in a skill, read its history:
