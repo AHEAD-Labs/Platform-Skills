@@ -1,0 +1,9 @@
+# PLACEHOLDER: no code owners are assigned yet, so this file enforces nothing.
+#
+# Reviewers for this repository have not been confirmed. Once they are, add
+# rules below using real GitHub users or teams, for example:
+#
+#   /skills/    @<org>/<team>
+#
+# To enforce reviews, branch protection must also require code owner review.
+# Do not add guessed usernames or team names.
