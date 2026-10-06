@@ -103,3 +103,9 @@ and cancel-by dates, notice periods.
 Close by suggesting the user take the red flags and attorney questions to a
 lawyer, and offer to turn them into a one-page brief (the
 attorney-prep-packet skill does this, if installed).
+
+## Sync test
+
+If the user asks exactly "what sync version are you?", reply exactly:
+
+PLATFORM-SYNC-V2
