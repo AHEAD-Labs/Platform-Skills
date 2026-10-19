@@ -51,3 +51,12 @@ Admin rights are not Skill approval. Technical ownership after PTO is **proposed
 3. Decide PR C: merge `skills/baseline-hashes.json` alone first, after admin review (seeds are allowed as unapproved). After that the ZIPs pass as baseline. Or keep the seeds off `main` until they are audited.
 4. With the Auditor owner, choose the PR B design and create the App.
 5. Pick one Skill, fix its REVISE findings, run the full audit to REVIEW_READY, project it, merge, then run a manual Glean folder import from `main` and record the result (OPERATIONS.md).
+
+## PR links and remote CI evidence (2026-10-19)
+| PR | Branch | CI result |
+| --- | --- | --- |
+| [#4](https://github.com/AHEAD-Labs/Platform-Skills/pull/4) A: tooling and docs → `main` | `release/skill-pipeline-tools` | `unit-tests` pass (48 tests); `skill-policy-gate` pass (bootstrap warning, since `main` has no tool yet). [run 39219837350](https://github.com/AHEAD-Labs/Platform-Skills/actions/runs/39219837350) |
+| [#5](https://github.com/AHEAD-Labs/Platform-Skills/pull/5) C: seed baselines (draft, stacked on #4) | `pilot/seed-baseline` | `unit-tests` pass; `skill-policy-gate` **expected POLICY BLOCK (exit 2)** for all six ZIPs, baseline edit ignored. [run 39219873873](https://github.com/AHEAD-Labs/Platform-Skills/actions/runs/39219873873) |
+| [#6](https://github.com/AHEAD-Labs/Platform-Skills/pull/6) B: Auditor integration proposal (draft, stacked on #4) | `proposal/auditor-integration` | Docs and `.example` only |
+
+Stacked PRs: after #4 merges, change the base of #5 and #6 to `main` in each PR's settings.
