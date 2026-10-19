@@ -5,12 +5,13 @@ Platform-Skills is intentionally **public**. Anything committed here must be sui
 ## State at handoff
 | Item | Where | Status |
 | --- | --- | --- |
-| A. Tooling, tests, read-only CI, docs | PR A (`release/skill-pipeline-tools`) | Open, awaiting independent review |
+| A. Tooling, tests, read-only CI, docs | PR #4 | **Merged to `main` as `1f793b0` (2026-10-19) by its author, without an independent review.** A retroactive review is requested in PR #7 |
+| Priority 1: ratify #4 and protect `main` | PR #7 (`governance/priority-1-ratify-and-protect`) | **Open. First item for Joe or Grace to review and merge** |
 | B. Skills Auditor integration + CODEOWNERS/branch protection | PR B (`proposal/auditor-integration`, draft) | Needs Auditor-owner and admin decisions |
 | C. Six seed ZIP exports + baseline hashes | PR C (`pilot/seed-baseline`, draft) | Blocked by design until baseline is admin-approved or Skills are audited |
 | Old branch `glean-platform-skills-pilot` | origin `5e83f4d` (ZIP staging) | Superseded by A + C. Do not merge it directly. |
 
-Nothing was merged to `main`: there is no independent reviewer for my own PRs, and the author does not approve their own PR.
+`main` now contains the tooling from #4. It went in without second-person review, which is an exception to CONTRIBUTING.md, and is recorded here openly. Until #7 is approved and merged by someone other than Akbar, treat `1f793b0` as **unreviewed**. If a reviewer finds a problem, use the revert path in OPERATIONS.md (`git revert 1f793b0` via PR).
 
 PR links and the remote CI run are listed at the end of this file.
 
@@ -33,7 +34,7 @@ PR links and the remote CI run are listed at the end of this file.
 ## BLOCKED ON APPROVAL OR VENDOR
 - **Auditor owner:** push and merge Skills-Marketplace `db4d148` (local only at handoff) and nominate a pinned SHA.
 - **Org admin:** GitHub App for the status-posting design.
-- **Admins (Joe, Grace or Meredith):** branch protection ruleset and CODEOWNERS with verified handles (GOVERNANCE.md).
+- **Admins and reviewers (Joe, Grace):** branch protection ruleset and CODEOWNERS with verified handles (GOVERNANCE.md).
 - **Seed Skills:** a local Auditor run returned REVISE for all six. The FDE or owner must fix and re-export before any can be approved.
 - **Glean (vendor):** ZIP-URL import fails. Still open: refresh cadence, tenant behaviour, roadmap, and the migration path for manual org Skills.
 
@@ -43,13 +44,13 @@ PR links and the remote CI run are listed at the end of this file.
 - **Admins:** settings, baseline-hash changes, workflow and tool changes.
 - **Glean admins (Grace/Isha):** manual import from `main`, legacy-copy deactivation, recording the observed deployment state.
 
-Admin rights are not Skill approval. Technical ownership after PTO is **proposed** to Joe (with Grace for Glean distribution) and **not yet accepted**. Escalation: Meredith (Enterprise GPT governance).
+Admin rights are not Skill approval. Technical ownership after PTO is **proposed** to Joe (with Grace for Glean distribution) and **not yet accepted**. Escalation contact: to be confirmed by Joe and Grace. Meredith has admin access for visibility only and is not a reviewer or code owner.
 
 ## Next actions for Joe and Grace
-1. Review and merge PR A (any reviewer other than Akbar). Check that `unit-tests` and `skill-policy-gate` are green on it.
-2. Apply the `main` ruleset and CODEOWNERS (GOVERNANCE.md). Require `unit-tests` and `skill-policy-gate`.
-3. Decide PR C: merge `skills/baseline-hashes.json` alone first, after admin review (seeds are allowed as unapproved). After that the ZIPs pass as baseline. Or keep the seeds off `main` until they are audited.
-4. With the Auditor owner, choose the PR B design and create the App.
+1. **PR #7 first:** review the merged #4 content using the checklist in `docs/PRIORITY-1.md`, then approve and merge #7 yourself. Akbar must not approve it.
+2. Apply the `main` ruleset and CODEOWNERS (GOVERNANCE.md). Require `unit-tests` and `skill-policy-gate`. Without this, anyone with write access can merge to `main` unreviewed, including the author of a change.
+3. Decide PR #5: merge `skills/baseline-hashes.json` alone first, after admin review (seeds are allowed as unapproved), or keep the seeds off `main` until they are audited.
+4. With the Auditor owner, choose the PR #6 design and create the App.
 5. Pick one Skill, fix its REVISE findings, run the full audit to REVIEW_READY, project it, merge, then run a manual Glean folder import from `main` and record the result (OPERATIONS.md).
 
 ## PR links and remote CI evidence (2026-10-19)
@@ -58,5 +59,6 @@ Admin rights are not Skill approval. Technical ownership after PTO is **proposed
 | [#4](https://github.com/AHEAD-Labs/Platform-Skills/pull/4) A: tooling and docs → `main` | `release/skill-pipeline-tools` | `unit-tests` pass (48 tests); `skill-policy-gate` pass (bootstrap warning, since `main` has no tool yet). [run 39219837350](https://github.com/AHEAD-Labs/Platform-Skills/actions/runs/39219837350) |
 | [#5](https://github.com/AHEAD-Labs/Platform-Skills/pull/5) C: seed baselines (draft, stacked on #4) | `pilot/seed-baseline` | `unit-tests` pass; `skill-policy-gate` **expected POLICY BLOCK (exit 2)** for all six ZIPs, baseline edit ignored. [run 39219873873](https://github.com/AHEAD-Labs/Platform-Skills/actions/runs/39219873873) |
 | [#6](https://github.com/AHEAD-Labs/Platform-Skills/pull/6) B: Auditor integration proposal (draft, stacked on #4) | `proposal/auditor-integration` | Docs and `.example` only |
+| [#7](https://github.com/AHEAD-Labs/Platform-Skills/pull/7) Priority 1: ratify #4 + protect `main` | `governance/priority-1-ratify-and-protect` | Docs only; see PR checks |
 
-Stacked PRs: after #4 merges, change the base of #5 and #6 to `main` in each PR's settings.
+#5 and #6 were rebased onto `main` after #4 merged; they target `main` directly. Since `main` now holds `tools/skillpkg.py`, `skill-policy-gate` runs the trusted copy from `main` on every PR (no more bootstrap warning).
