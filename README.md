@@ -61,6 +61,7 @@ flowchart TD
 | [docs/OPERATIONS.md](docs/OPERATIONS.md) | Submit, update, audit, approve, project, Glean release, rollback, troubleshooting |
 | [docs/GOVERNANCE.md](docs/GOVERNANCE.md) | Approval authority, trust boundaries, required branch protection |
 | [docs/AUDITOR-CONTRACT.md](docs/AUDITOR-CONTRACT.md) | Skills Auditor interface and integration status (**not yet integrated**) |
+| [docs/PRIORITY-1.md](docs/PRIORITY-1.md) | **Start here (admins):** ratify the merged tooling and protect `main` |
 | [docs/PTO-HANDOFF-2026-10-19.md](docs/PTO-HANDOFF-2026-10-19.md) | Current state, open PRs, next actions |
 
 CI (`validate-skills`) runs unit tests and a policy gate on every PR, with a read-only token and no secrets. Any new or changed Skill ZIP is **blocked** until a trusted Skills Auditor result exists. That block is intentional.
