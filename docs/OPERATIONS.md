@@ -3,6 +3,10 @@
 Flow: export the ZIP from Glean → PR → deterministic validation → **Skills Auditor** (full or delta) → human review → merge to `main` (approved) → manual Glean import.
 Items marked **works today** are in `tools/skillpkg.py` (Python 3 standard library, no tokens or LLM key) and covered by `tests/`.
 
+**Prerequisites:** `git`, Python 3.12+ (CI uses the `ubuntu-latest` system `python3`; locally verified on 3.14), and `gh` for PR and CI commands. Running the Auditor needs read access to the internal Skills-Marketplace repo.
+
+> **Current limitation (2026-10-19):** the Auditor is not in CI yet, so `skill-policy-gate` cannot go green for any PR that adds or changes a Skill ZIP. Until the interim path is decided (PICKUP.md D2), do not merge Skill PRs, and do not bypass the gate without that written decision.
+
 ## Layout
 | Path | Purpose |
 | --- | --- |
@@ -32,8 +36,10 @@ Replace the ZIP on `update/<id>`. Because `provenance/<id>.json` exists on `main
 An engineer with internal Auditor access runs it locally on the exact ZIP:
 ```
 python3 -I <Skills-Marketplace>/scripts/skills_auditor.py full  skills/shared/<id>.zip --json /tmp/<id>.json --md /tmp/<id>.md
-python3 -I <Skills-Marketplace>/scripts/skills_auditor.py delta skills/shared/<id>.zip --baseline <approved.zip> --json ... --md ...
+git show origin/main:skills/shared/<id>.zip > /tmp/<id>.approved.zip          # baseline for a delta audit
+python3 -I <Skills-Marketplace>/scripts/skills_auditor.py delta skills/shared/<id>.zip --baseline /tmp/<id>.approved.zip --json /tmp/<id>.json --md /tmp/<id>.md
 ```
+Use the mode that `plan` prints. Exit codes: 0 REVIEW_READY, 1 REVISE, 2 BLOCK, 3 usage error. REVIEW_READY means ready for human review. It is not approval.
 Keep reports in the internal repo or ticket. **Do not commit audit findings to this public repo.** REVISE or BLOCK: the owning FDE fixes the Skill in Glean, re-exports it and pushes a new commit, and the audit is re-run. Never edit a report.
 
 ## Approve and project (after REVIEW_READY plus an independent reviewer)
@@ -41,7 +47,7 @@ Keep reports in the internal repo or ticket. **Do not commit audit findings to t
 python3 -I tools/skillpkg.py project skills/shared/<id>.zip --skill-id <id> --audit /tmp/<id>.json --approval approval.json
 python3 -I tools/skillpkg.py verify  skills/shared/<id>.zip --skill-id <id>
 ```
-`approval.json`: `{"skill_id","package_sha256","decision":"approved","author","approved_by","approved_at","pull_request"}`. It is stored as `approval_claim_unauthenticated`. The real approval is the GitHub review and merge. Commit `projections/glean/<id>/` and `provenance/<id>.json` in the same PR. Before committing, check that the Skill's `sensitivity` is suitable for a **public** repository.
+`approval.json`: `{"skill_id","package_sha256","decision":"approved","author","approved_by","approved_at","pull_request"}`. Keep it outside the repo (for example in `/tmp`). The gate ignores committed approval files, and its content is copied into provenance as `approval_claim_unauthenticated`. The real approval is the GitHub review and merge. Pass a **repo-relative** ZIP path to `project` (PICKUP D8). Commit `projections/glean/<id>/` and `provenance/<id>.json` in the same PR. Before committing, check that the Skill's `sensitivity` is suitable for a **public** repository.
 
 ## Glean release (manual, admin-controlled; not yet exercised end to end)
 1. After merge, note the merge commit SHA.

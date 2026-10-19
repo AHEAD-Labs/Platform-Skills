@@ -3,7 +3,8 @@
 Platform-Skills never fabricates or self-certifies an audit. Today the CI gate returns **POLICY BLOCK (exit 2)** for every new or changed Skill ZIP, because no trusted Auditor result can reach it yet.
 
 ## Verified Auditor interface (inspected read-only, 2026-10-19)
-- Repository: `AHEAD-Labs/Skills-Marketplace` (**internal**). Branch `feat/skills-auditor-deterministic-core`, commit `db4d148`. That branch was **local only, not pushed**, so nothing can be pinned yet.
+- Repository: `AHEAD-Labs/Skills-Marketplace` (**internal**). First inspected at local commit `db4d148`. Now pushed as **Skills-Marketplace #114** (`feat/skills-auditor-deterministic-core`, head `45dd7a7` on 2026-10-19), **open and not merged**. Pin a SHA only after #114 merges.
+- Re-checked at `45dd7a7`: same CLI and exit codes, same `skills-auditor-report-v1` schema, rule set now `sa-rules-1.1.0`, plus an optional `--use-client-denylist` flag. `tools/skillpkg.py` does not depend on the rule-set version.
 - CLI: `python3 scripts/skills_auditor.py full <pkg> --json r.json --md r.md` / `delta <candidate> --baseline <approved> ...`. Exit codes: 0 REVIEW_READY, 1 REVISE, 2 BLOCK, 3 usage error. Deterministic, no LLM key.
 - Report: `schema_version: skills-auditor-report-v1`, `tool: skills-auditor`, `skill_id`, `mode`, `result`, `candidate.package_sha256`, `rule_set_version`, `policy_fingerprint`, `approval: not_approved`. `tools/skillpkg.py` checks exactly these fields.
 - A local run against the six seed ZIPs returned **REVISE** for all six. Findings are kept internal. None of the seeds is REVIEW_READY.
@@ -21,4 +22,4 @@ Have the **trusted side run the audit and report a status back**:
 4. Branch protection on `main` requires `skills-auditor/result`, restricted to that App as the source.
 5. Optional: the internal job publishes a REVIEW_READY report, which `skillpkg.py ci --auditor-reports DIR` verifies (hash, mode, result).
 
-Decisions needed: Auditor owner (push and merge `db4d148`, nominate a release SHA), an org admin (create the App), and the Platform-Skills admins (required status check).
+Decisions needed: Auditor owner (review and merge Skills-Marketplace #114, nominate a release SHA), an org admin (create the App), and the Platform-Skills admins (required status check).
