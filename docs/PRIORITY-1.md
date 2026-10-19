@@ -1,6 +1,6 @@
 # Priority 1: ratify #4 and protect `main`
 
-**Who:** Joe, Grace or Meredith. **Not** Akbar, the author of #4.
+**Who:** Joe or Grace. **Not** Akbar, the author of #4. (Meredith is an admin for visibility only, not a reviewer.)
 **Why first:** #4 (`1f793b0`) was merged by its author without independent review, and `main` has no branch protection. Every later control (the policy gate, CODEOWNERS, approval of Skills) depends on these two gaps being closed.
 
 Approving and merging PR #7 records that an independent reviewer has checked #4. If you find a problem, request changes on #7 and open a revert PR for `1f793b0` instead.
@@ -29,8 +29,8 @@ Check:
 - [ ] Verify by running `gh api repos/AHEAD-Labs/Platform-Skills/rules/branches/main`; it should list the rules above.
 
 ## 3. CODEOWNERS (admin)
-- [ ] Replace the placeholder in `.github/CODEOWNERS` with **verified** GitHub handles or a team (see the draft in GOVERNANCE.md). Do not infer handles from display names.
-- [ ] Turn on "Require review from Code Owners" in the ruleset once the file is valid.
+- [ ] Confirm `.github/CODEOWNERS` (added in this PR) lists the right accounts: `@JoeVaderRules` (Joe) and `@babiryegrace20` (Grace). Fix it here if not.
+- [ ] After merging, turn on "Require review from Code Owners" in the ruleset.
 
 ## 4. Then, in order
 1. PR #5: the decision on seed baselines.

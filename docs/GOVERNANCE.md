@@ -17,7 +17,9 @@
 | Commit symlinks to redirect reads or writes | Fails | Symlinks are rejected anywhere in the tree, and `project` refuses symlinked outputs (tested) |
 | New or changed ZIP with no trusted Auditor result | POLICY BLOCK (exit 2) | No bypass in code (tested) |
 
-## Required repository settings (admins: Joe, Grace or Meredith; not yet applied)
+## Required repository settings (applied by Joe or Grace; not yet applied)
+
+Reviewers and code owners: **Joe and Grace**. Meredith has admin access for visibility only. She is **not** a code owner or a PR reviewer.
 Checked 2026-10-19: `main` has **no branch protection**, and `.github/CODEOWNERS` is a placeholder. Apply a ruleset on `main`:
 - Require a pull request. Require at least 1 approval, dismiss stale approvals on push, and require approval of the most recent push by someone other than the pusher.
 - Require code owner review once CODEOWNERS holds real handles.
@@ -25,11 +27,4 @@ Checked 2026-10-19: `main` has **no branch protection**, and `.github/CODEOWNERS
 - Block force pushes and branch deletion. Do not grant a bypass list (or keep it emergency-only and logged).
 - Do not enable auto-merge.
 
-CODEOWNERS draft. Fill in **verified** GitHub handles; do not infer them from display names:
-```
-*                    @<platform-skills-maintainers>
-/.github/            @<platform-skills-admins>
-/tools/              @<platform-skills-admins>
-/skills/baseline-hashes.json @<platform-skills-admins>
-/skills/             @<enterprise-gpt-reviewers>
-```
+CODEOWNERS is set in `.github/CODEOWNERS` (Joe `@JoeVaderRules`, Grace `@babiryegrace20`). Narrower path rules (`.github/`, `tools/`, `skills/baseline-hashes.json`) can be added later if the team grows.

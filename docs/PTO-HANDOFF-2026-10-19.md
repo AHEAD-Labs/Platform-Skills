@@ -6,7 +6,7 @@ Platform-Skills is intentionally **public**. Anything committed here must be sui
 | Item | Where | Status |
 | --- | --- | --- |
 | A. Tooling, tests, read-only CI, docs | PR #4 | **Merged to `main` as `1f793b0` (2026-10-19) by its author, without an independent review.** A retroactive review is requested in PR #7 |
-| Priority 1: ratify #4 and protect `main` | PR #7 (`governance/priority-1-ratify-and-protect`) | **Open. First item for Joe, Grace or Meredith to review and merge** |
+| Priority 1: ratify #4 and protect `main` | PR #7 (`governance/priority-1-ratify-and-protect`) | **Open. First item for Joe or Grace to review and merge** |
 | B. Skills Auditor integration + CODEOWNERS/branch protection | PR B (`proposal/auditor-integration`, draft) | Needs Auditor-owner and admin decisions |
 | C. Six seed ZIP exports + baseline hashes | PR C (`pilot/seed-baseline`, draft) | Blocked by design until baseline is admin-approved or Skills are audited |
 | Old branch `glean-platform-skills-pilot` | origin `5e83f4d` (ZIP staging) | Superseded by A + C. Do not merge it directly. |
@@ -34,7 +34,7 @@ PR links and the remote CI run are listed at the end of this file.
 ## BLOCKED ON APPROVAL OR VENDOR
 - **Auditor owner:** push and merge Skills-Marketplace `db4d148` (local only at handoff) and nominate a pinned SHA.
 - **Org admin:** GitHub App for the status-posting design.
-- **Admins (Joe, Grace or Meredith):** branch protection ruleset and CODEOWNERS with verified handles (GOVERNANCE.md).
+- **Admins and reviewers (Joe, Grace):** branch protection ruleset and CODEOWNERS with verified handles (GOVERNANCE.md).
 - **Seed Skills:** a local Auditor run returned REVISE for all six. The FDE or owner must fix and re-export before any can be approved.
 - **Glean (vendor):** ZIP-URL import fails. Still open: refresh cadence, tenant behaviour, roadmap, and the migration path for manual org Skills.
 
@@ -44,7 +44,7 @@ PR links and the remote CI run are listed at the end of this file.
 - **Admins:** settings, baseline-hash changes, workflow and tool changes.
 - **Glean admins (Grace/Isha):** manual import from `main`, legacy-copy deactivation, recording the observed deployment state.
 
-Admin rights are not Skill approval. Technical ownership after PTO is **proposed** to Joe (with Grace for Glean distribution) and **not yet accepted**. Escalation: Meredith (Enterprise GPT governance).
+Admin rights are not Skill approval. Technical ownership after PTO is **proposed** to Joe (with Grace for Glean distribution) and **not yet accepted**. Escalation contact: to be confirmed by Joe and Grace. Meredith has admin access for visibility only and is not a reviewer or code owner.
 
 ## Next actions for Joe and Grace
 1. **PR #7 first:** review the merged #4 content using the checklist in `docs/PRIORITY-1.md`, then approve and merge #7 yourself. Akbar must not approve it.
