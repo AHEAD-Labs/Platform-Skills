@@ -1,0 +1,60 @@
+# Deterministic package validation for Platform-Skills (public repository).
+#
+# - Trigger: pull_request (NOT pull_request_target). Token is read-only, no secrets are used, and
+#   the PR's content is treated as data. Nothing is published, merged or written back.
+#   No paths filter: a required check that is skipped by a filter would never report.
+# - Two jobs so a reviewer can tell them apart:
+#     unit-tests         fails  => the tooling is broken (fix the code)
+#     skill-policy-gate  exit 2 => POLICY BLOCK: a ZIP lacks a trusted Skills Auditor result.
+#                                  Expected until the Auditor is integrated; not a broken workflow.
+#                        exit 1 => invalid, unsafe or tampered package/projection.
+# - The gate runs the BASE branch's copy of tools/skillpkg.py against the PR's files and reads seed
+#   baselines / approved state only from the base branch, so a PR cannot authorise itself by
+#   editing the tool, skills/baseline-hashes.json, audits/ or provenance/.
+#   Residual risk: a PR can still edit THIS file. Mitigation is CODEOWNERS review of .github/**
+#   plus branch protection (docs/GOVERNANCE.md), not anything a workflow can enforce on itself.
+# - Skills Auditor: NOT integrated (docs/AUDITOR-CONTRACT.md). No audit result is fabricated.
+name: validate-skills
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-skills-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Unit tests
+        run: python3 -I -m unittest discover -s tests -v
+
+  skill-policy-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Check out the trusted base revision
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: git worktree add --detach "$RUNNER_TEMP/base" "$BASE_SHA"
+      - name: Policy gate (trusted tool, trusted baseline)
+        run: |
+          TOOL="$RUNNER_TEMP/base/tools/skillpkg.py"
+          if [ ! -f "$TOOL" ]; then
+            echo "::warning::Bootstrap: base branch has no tools/skillpkg.py; using the PR's copy. Review tools/ changes manually."
+            TOOL=tools/skillpkg.py
+          fi
+          python3 -I "$TOOL" plan --root . --trusted-root "$RUNNER_TEMP/base"
+          python3 -I "$TOOL" ci --root . --trusted-root "$RUNNER_TEMP/base"
