@@ -9,11 +9,13 @@
 | Base template | `blank` | 1.0 | General frame, built from the SOW |
 
 Each hub records its template and version in its generator stamp, for example
-`ahead-deliverable-hub 1.3.5; look=...; template=target-design 1.0 (agreed baseline)`.
+`ahead-deliverable-hub 1.3.7; look=...; template=target-design 1.0 (agreed baseline)`.
 `check.py` prints it.
 
 ## Skill versions
 
+- **1.3.7.** Adds a guardrail so normal use never surfaces maintainer tooling: when asked to build, fill, check, hand over, demo or try out a hub, the skill does not run selftest or the evals, read `evals/`, or report test output, evaluation results or version internals. "Demo" or "try it out" builds a sample hub instead. Documentation only; no change to hub output.
+- **1.3.6.** Fixes a portability bug found on Glean: the scripts failed with `ModuleNotFoundError: No module named 'hublib'` because that sandbox sets `PYTHONSAFEPATH=1`, which stops Python from importing from a script's own folder. Each script now adds its own folder to the import path explicitly, so the "run from any directory" promise holds on both Claude and Glean. Adds a PYTHONSAFEPATH=1 regression to `selftest.py`. No change to hub output.
 - **1.3.5.** Adds a "Why a hub" purpose note to `SKILL.md` and `README.md` explaining the benefit (one place, one version, traceable, easy to present and hand over). Documentation only; no behavior, script or structure change.
 - **1.3.4.** The same package is published to both Claude and Glean, so `ahead-platform` is now [Claude, Glean] and `evals/evals.json` declares a Glean track. The Claude track carries its evidence; the Glean track is entirely not_run (deployed, not yet tested). No behavior or script change.
 - **1.3.3.** Portability, no behavior change. Adds a Runtime and portability note stating the skill is stdlib-only with text-encoded assets, verified on Claude and expected (not yet tested) on Glean. Adds `evals/glean-readiness.md` with the Glean test plan for whoever has Glean access to run. Platform tag stays [Claude] until a Glean run is recorded.

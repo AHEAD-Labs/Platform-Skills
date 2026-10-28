@@ -14,8 +14,10 @@ PY = sys.executable
 results = []
 
 
-def run(*args):
-    p = subprocess.run([PY, *map(str, args)], capture_output=True, text=True)
+def run(*args, env=None):
+    import os
+    e = {**os.environ, **env} if env else None
+    p = subprocess.run([PY, *map(str, args)], capture_output=True, text=True, env=e)
     return p.returncode, p.stdout + p.stderr
 
 
@@ -35,6 +37,15 @@ def main():
         rc, _ = run(build, '--preset', preset, '--client', 'Contoso', '--date', 'March 5, 2027', '--out', out_html)
         rc2, out = run(chk, out_html, '--client', 'Contoso')
         check(f'build and check: {preset}', rc == 0 and passed(out))
+    # 1a. scripts import their own folder even when PYTHONSAFEPATH is set (the Glean sandbox sets it)
+    safe = {'PYTHONSAFEPATH': '1'}
+    rc, out = run(build, '--preset', 'base', '--client', 'Contoso', '--out', tmp / 'safe.html', env=safe)
+    check('build runs under PYTHONSAFEPATH=1 (no hublib ModuleNotFoundError)', rc == 0 and 'ModuleNotFoundError' not in out)
+    rc, out = run(chk, tmp / 'safe.html', '--client', 'Contoso', env=safe)
+    check('check runs under PYTHONSAFEPATH=1', rc == 0 and 'ModuleNotFoundError' not in out)
+    rc, out = run(fill, tmp / 'safe.html', '--list', env=safe)
+    check('fill_slot runs under PYTHONSAFEPATH=1', rc == 0 and 'ModuleNotFoundError' not in out)
+
     html2 = (tmp / 'phase-2.html').read_text(encoding='utf-8')
     check('stamp records the template version', re.search(r'template=target-design [\d.]+ \(agreed baseline\)', html2))
     _, out = run(build, '--preset', 'phase-2', '--client', 'X', '--out', tmp / 'x.html')

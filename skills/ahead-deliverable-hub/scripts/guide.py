@@ -5,6 +5,9 @@ so it stays accurate after people have edited the file.
   python3 guide.py hub.html --out "How to add content.md"
 """
 import argparse, html as H, pathlib, re
+# Make this script's own folder importable even when PYTHONSAFEPATH is set (e.g. the Glean sandbox).
+import sys as _sys, pathlib as _pathlib
+_sys.path.insert(0, str(_pathlib.Path(__file__).resolve().parent))
 
 SLOT_RE = re.compile(r'SLOT: (\S+)\s*\n\s*Section: (.*?)\s*\n\s*Owner: (.*?)\s*\n', re.S)
 TAB_RE = re.compile(r'<!-- #+ TAB: (\S+) #+ -->')

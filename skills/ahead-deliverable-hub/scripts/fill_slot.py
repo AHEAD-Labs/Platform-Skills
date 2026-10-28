@@ -17,6 +17,9 @@ Plain-content options (--text, --md, --html-file, --image) refuse a slot that ho
 headline numbers, and change nothing. Use --rows, --block or --values for those, --append to add after them, or --force to replace them.
 """
 import argparse, base64, csv, json, mimetypes, pathlib, re, sys
+# Make this script's own folder importable even when PYTHONSAFEPATH is set (e.g. the Glean sandbox).
+import sys as _sys, pathlib as _pathlib
+_sys.path.insert(0, str(_pathlib.Path(__file__).resolve().parent))
 from hublib import md, mdi, e
 from guide import slots, tab_labels
 

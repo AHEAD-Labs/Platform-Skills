@@ -10,13 +10,16 @@ The config format is described in references/config-schema.md. Any string may us
 {client} {engagement} {phase} {next_phase} {prev_phase} {p} {np} {date} {package}.
 """
 import argparse, base64, copy, csv, datetime as dt, json, mimetypes, pathlib, re, sys
+# Make this script's own folder importable even when PYTHONSAFEPATH is set (e.g. the Glean sandbox).
+import sys as _sys, pathlib as _pathlib
+_sys.path.insert(0, str(_pathlib.Path(__file__).resolve().parent))
 from hublib import (e, md, mdi, ph, tag, initials, make_tokens, subst, slot_open, slot_close,
                     HOW_TEXT, HOW_TABLE, HOW_STATS, HOW_DATA, ICONS)
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 ASSETS = ROOT / 'assets'
 SKILL_NAME = 'ahead-deliverable-hub'
-VERSION = '1.3.5'
+VERSION = '1.3.7'
 
 
 def look_hash():

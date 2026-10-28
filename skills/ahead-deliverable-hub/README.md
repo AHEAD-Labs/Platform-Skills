@@ -6,7 +6,7 @@ Builds AHEAD deliverable hubs: branded, self-contained HTML websites that hold a
 
 | Item | Value |
 |---|---|
-| Version | 1.3.5 |
+| Version | 1.3.7 |
 | Publication status | Approved for enterprise-wide distribution (2026-10-28). |
 | Owner | ethan.cunningham@ahead.com |
 | Team | AI HIVE |

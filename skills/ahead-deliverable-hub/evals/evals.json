@@ -1,6 +1,6 @@
 {
  "skill_name": "ahead-deliverable-hub",
- "version": "1.3.5",
+ "version": "1.3.7",
  "tested_by": "ethan.cunningham@ahead.com (owner); script results run in-session by Claude",
  "tested_date": "2026-10-28",
  "platform_tracks": {
@@ -40,7 +40,7 @@
      "results": {
       "Claude": {
        "passed": true,
-       "evidence": "run_script_evals.py HP1-1: build exit 0; stamp version 1.3.5",
+       "evidence": "run_script_evals.py HP1-1: build exit 0; stamp version 1.3.7",
        "run_by": "Claude (in-session run of evals/run_script_evals.py)",
        "run_date": "2026-10-28"
       },
@@ -769,7 +769,7 @@
      "results": {
       "Claude": {
        "passed": true,
-       "evidence": "run_script_evals.py ART1-2: stamp: ahead-deliverable-hub 1.3.5; look=64dc9c4160fe; template=target-design 1.0 (agreed baseline)",
+       "evidence": "run_script_evals.py ART1-2: stamp: ahead-deliverable-hub 1.3.7; look=64dc9c4160fe; template=target-design 1.0 (agreed baseline)",
        "run_by": "Claude (in-session run of evals/run_script_evals.py)",
        "run_date": "2026-10-28"
       },
@@ -889,7 +889,7 @@
      "results": {
       "Claude": {
        "passed": true,
-       "evidence": "run_script_evals.py RES1-1: 12 referenced files checked; missing: []",
+       "evidence": "run_script_evals.py RES1-1: 13 referenced files checked; missing: []",
        "run_by": "Claude (in-session run of evals/run_script_evals.py)",
        "run_date": "2026-10-28"
       },
@@ -931,7 +931,7 @@
      "results": {
       "Claude": {
        "passed": true,
-       "evidence": "run_script_evals.py RES1-3: versions (frontmatter, build.py, SPEC, changelog): ['1.3.5']",
+       "evidence": "run_script_evals.py RES1-3: versions (frontmatter, build.py, SPEC, changelog): ['1.3.7']",
        "run_by": "Claude (in-session run of evals/run_script_evals.py)",
        "run_date": "2026-10-28"
       },
@@ -956,7 +956,7 @@
      "results": {
       "Claude": {
        "passed": true,
-       "evidence": "run_script_evals.py RES1-4: 29 of 29 checks passed",
+       "evidence": "run_script_evals.py RES1-4: 32 of 32 checks passed",
        "run_by": "Claude (in-session run of evals/run_script_evals.py)",
        "run_date": "2026-10-28"
       },
