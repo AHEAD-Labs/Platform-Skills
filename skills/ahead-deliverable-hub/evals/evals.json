@@ -1,0 +1,974 @@
+{
+ "skill_name": "ahead-deliverable-hub",
+ "version": "1.3.5",
+ "tested_by": "ethan.cunningham@ahead.com (owner); script results run in-session by Claude",
+ "tested_date": "2026-10-28",
+ "platform_tracks": {
+  "Claude": {
+   "status": "not_run"
+  },
+  "Glean": {
+   "status": "not_run"
+  }
+ },
+ "status": "not_run",
+ "notes": "Approved for enterprise-wide distribution on Claude and Glean, from one package. Per-assertion results record evidence where it exists: the Claude track carries script-assertion results from evals/run_script_evals.py and the five conversational cases recorded 2026-10-28. Assertions with a null result have no recorded evidence yet. A track is credited only on its own recorded evidence.",
+ "evals": [
+  {
+   "id": "HP-1",
+   "type": "happy-path",
+   "platforms": [
+    "Claude",
+    "Glean"
+   ],
+   "scenario": "Build a target design hub for a new client, fill three slots, leave everything else as placeholders.",
+   "prompt": "Build a Phase 2 target design hub for Acme Corp. Fill the overview conclusion, the three headline numbers (18, 42, 6) and the approach paragraph. Leave everything else for the team.",
+   "run_method": "script",
+   "track_status": {
+    "Claude": "passed",
+    "Glean": "not_run"
+   },
+   "status": "passed",
+   "assertions": [
+    {
+     "id": "HP1-1",
+     "text": "build.py exits 0 and the generator stamp carries the skill version in build.py",
+     "spec_refs": [
+      "AC-1",
+      "AC-5"
+     ],
+     "results": {
+      "Claude": {
+       "passed": true,
+       "evidence": "run_script_evals.py HP1-1: build exit 0; stamp version 1.3.5",
+       "run_by": "Claude (in-session run of evals/run_script_evals.py)",
+       "run_date": "2026-10-28"
+      },
+      "Glean": {
+       "passed": null,
+       "evidence": null,
+       "run_by": null,
+       "run_date": null
+      }
+     }
+    },
+    {
+     "id": "HP1-2",
+     "text": "Exactly the three requested slots change from open to filled and no other slot changes state",
+     "spec_refs": [
+      "AC-3"
+     ],
+     "results": {
+      "Claude": {
+       "passed": true,
+       "evidence": "run_script_evals.py HP1-2: slots changed: ['overview-approach', 'overview-conclusion-text', 'overview-cover-stats']",
+       "run_by": "Claude (in-session run of evals/run_script_evals.py)",
+       "run_date": "2026-10-28"
+      },
+      "Glean": {
+       "passed": null,
+       "evidence": null,
+       "run_by": null,
+       "run_date": null
+      }
+     }
+    },
+    {
+     "id": "HP1-3",
+     "text": "check.py exits 0 and check.py --final exits 1 while placeholders remain",
+     "spec_refs": [
+      "AC-2"
+     ],
+     "results": {
+      "Claude": {
+       "passed": true,
+       "evidence": "run_script_evals.py HP1-3: check exit 0 (want 0); --final exit 1 (want 1 while placeholders remain)",
+       "run_by": "Claude (in-session run of evals/run_script_evals.py)",
+       "run_date": "2026-10-28"
+      },
+      "Glean": {
+       "passed": null,
+       "evidence": null,
+       "run_by": null,
+       "run_date": null
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "HP-2",
+   "type": "happy-path",
+   "platforms": [
+    "Claude",
+    "Glean"
+   ],
+   "scenario": "Build a discovery hub, fill a register and a table with structured data, fill the rest, and pass handover.",
+   "prompt": "Build a discovery hub for Beta Bank. Add this register and this platform table, fill every other slot, then run the final check.",
+   "run_method": "script",
+   "track_status": {
+    "Claude": "passed",
+    "Glean": "not_run"
+   },
+   "status": "passed",
+   "assertions": [
+    {
+     "id": "HP2-1",
+     "text": "A register supplied as a block is written to its slot and the slot shows as filled",
+     "spec_refs": [
+      "AC-3"
+     ],
+     "results": {
+      "Claude": {
+       "passed": true,
+       "evidence": "run_script_evals.py HP2-1: register fill exit 0",
+       "run_by": "Claude (in-session run of evals/run_script_evals.py)",
+       "run_date": "2026-10-28"
+      },
+      "Glean": {
+       "passed": null,
+       "evidence": null,
+       "run_by": null,
+       "run_date": null
+      }
+     }
+    },
+    {
+     "id": "HP2-2",
+     "text": "Table rows supplied as JSON are written to the table slot",
+     "spec_refs": [
+      "AC-3"
+     ],
+     "results": {
+      "Claude": {
+       "passed": true,
+       "evidence": "run_script_evals.py HP2-2: table rows fill exit 0",
+       "run_by": "Claude (in-session run of evals/run_script_evals.py)",
+       "run_date": "2026-10-28"
+      },
+      "Glean": {
+       "passed": null,
+       "evidence": null,
+       "run_by": null,
+       "run_date": null
+      }
+     }
+    },
+    {
+     "id": "HP2-3",
+     "text": "check.py --final exits 0 and no slot is left open once every slot is filled",
+     "spec_refs": [
+      "AC-2",
+      "AC-7"
+     ],
+     "results": {
+      "Claude": {
+       "passed": true,
+       "evidence": "run_script_evals.py HP2-3: --final exit 0 (want 0); empty slots left: 0",
+       "run_by": "Claude (in-session run of evals/run_script_evals.py)",
+       "run_date": "2026-10-28"
+      },
+      "Glean": {
+       "passed": null,
+       "evidence": null,
+       "run_by": null,
+       "run_date": null
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "WAY-1",
+   "type": "happy-path",
+   "platforms": [
+    "Claude",
+    "Glean"
+   ],
+   "scenario": "The user does not say which way in they want.",
+   "prompt": "Build me a deliverable hub for Acme's AI work.",
+   "run_method": "model",
+   "track_status": {
+    "Claude": "passed",
+    "Glean": "not_run"
+   },
+   "status": "passed",
+   "assertions": [
+    {
+     "id": "WAY-1-1",
+     "text": "Claude asks one short question offering the discovery template, the target design template and a custom hub from the SOW, before building",
+     "spec_refs": [
+      "SPEC-6"
+     ],
+     "results": {
+      "Claude": {
+       "passed": true,
+       "evidence": "Blind subagent given only SKILL.md + \"Build me a deliverable hub for Acme's AI work.\" offered discovery/target-design/custom and did not pick silently.",
+       "run_by": "Claude blind-subagent approximation (fresh agent, only SKILL.md + one prompt); NOT a clean-session install run",
+       "run_date": "2026-10-28"
+      },
+      "Glean": {
+       "passed": null,
+       "evidence": null,
+       "run_by": null,
+       "run_date": null
+      }
+     }
+    },
+    {
+     "id": "WAY-1-2",
+     "text": "Claude recommends the closest fit based on what the user described and does not run build.py before the user answers",
+     "spec_refs": [
+      "SPEC-6"
+     ],
+     "results": {
+      "Claude": {
+       "passed": true,
+       "evidence": "Same run: recommended closest fit based on the phase and asked for inputs before building; no build run.",
+       "run_by": "Claude blind-subagent approximation (fresh agent, only SKILL.md + one prompt); NOT a clean-session install run",
+       "run_date": "2026-10-28"
+      },
+      "Glean": {
+       "passed": null,
+       "evidence": null,
+       "run_by": null,
+       "run_date": null
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "EC-1",
+   "type": "edge-case",
+   "platforms": [
+    "Claude",
+    "Glean"
+   ],
+   "scenario": "The SOW and the deliverables schedule disagree on an owner and a date.",
+   "prompt": "Build the hub from the attached SOW and schedule. (The SOW names Priya as owner of the governance deliverable due 6 Nov; the schedule names Marcus and 13 Nov.) Use the schedule for the plan.",
+   "run_method": "model",
+   "track_status": {
+    "Claude": "passed",
+    "Glean": "not_run"
+   },
+   "status": "passed",
+   "assertions": [
+    {
+     "id": "EC-1-1",
+     "text": "Claude lists both conflicting values (owner and date) for the user to decide",
+     "spec_refs": [
+      "SPEC-3"
+     ],
+     "results": {
+      "Claude": {
+       "passed": true,
+       "evidence": "Blind subagent given the SOW/schedule conflict listed both the owner (Priya vs Marcus) conflict for the user.",
+       "run_by": "Claude blind-subagent approximation (fresh agent, only SKILL.md + one prompt); NOT a clean-session install run",
+       "run_date": "2026-10-28"
+      },
+      "Glean": {
+       "passed": null,
+       "evidence": null,
+       "run_by": null,
+       "run_date": null
+      }
+     }
+    },
+    {
+     "id": "EC-1-2",
+     "text": "Claude does not silently pick one value and does not write an invented value into the config",
+     "spec_refs": [
+      "SPEC-3",
+      "SPEC-5"
+     ],
+     "results": {
+      "Claude": {
+       "passed": true,
+       "evidence": "Same run: followed the instruction on dates but refused to pick the owner silently; offered options.",
+       "run_by": "Claude blind-subagent approximation (fresh agent, only SKILL.md + one prompt); NOT a clean-session install run",
+       "run_date": "2026-10-28"
+      },
+      "Glean": {
+       "passed": null,
+       "evidence": null,
+       "run_by": null,
+       "run_date": null
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "EC-2",
+   "type": "edge-case",
+   "platforms": [
+    "Claude",
+    "Glean"
+   ],
+   "scenario": "Bad input to fill_slot.py must fail closed.",
+   "prompt": "Fill a slot key that does not exist, then fill a slot with an image path that does not exist.",
+   "run_method": "script",
+   "track_status": {
+    "Claude": "passed",
+    "Glean": "not_run"
+   },
+   "status": "passed",
+   "assertions": [
+    {
+     "id": "EC2-1",
+     "text": "An unknown slot key exits nonzero and leaves the file byte-for-byte unchanged",
+     "spec_refs": [
+      "SPEC-4"
+     ],
+     "results": {
+      "Claude": {
+       "passed": true,
+       "evidence": "run_script_evals.py EC2-1: unknown key exit 1; file unchanged",
+       "run_by": "Claude (in-session run of evals/run_script_evals.py)",
+       "run_date": "2026-10-28"
+      },
+      "Glean": {
+       "passed": null,
+       "evidence": null,
+       "run_by": null,
+       "run_date": null
+      }
+     }
+    },
+    {
+     "id": "EC2-2",
+     "text": "A missing image path exits nonzero and leaves the file byte-for-byte unchanged",
+     "spec_refs": [
+      "SPEC-4"
+     ],
+     "results": {
+      "Claude": {
+       "passed": true,
+       "evidence": "run_script_evals.py EC2-2: missing image exit 1; file unchanged",
+       "run_by": "Claude (in-session run of evals/run_script_evals.py)",
+       "run_date": "2026-10-28"
+      },
+      "Glean": {
+       "passed": null,
+       "evidence": null,
+       "run_by": null,
+       "run_date": null
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "NT-1",
+   "type": "non-trigger",
+   "platforms": [
+    "Claude",
+    "Glean"
+   ],
+   "scenario": "An adjacent request that is not an HTML hub.",
+   "prompt": "Make me a client-facing PowerPoint deck summarizing this SOW.",
+   "run_method": "model",
+   "track_status": {
+    "Claude": "passed",
+    "Glean": "not_run"
+   },
+   "status": "passed",
+   "assertions": [
+    {
+     "id": "NT-1-1",
+     "text": "The deliverable hub skill is not used and no hub build or fill script is run",
+     "spec_refs": [
+      "SPEC-2"
+     ],
+     "results": {
+      "Claude": {
+       "passed": true,
+       "evidence": "Blind subagent (general assistant with the hub skill available) given a PowerPoint request did not invoke the hub skill.",
+       "run_by": "Claude blind-subagent approximation (fresh agent, only SKILL.md + one prompt); NOT a clean-session install run",
+       "run_date": "2026-10-28"
+      },
+      "Glean": {
+       "passed": null,
+       "evidence": null,
+       "run_by": null,
+       "run_date": null
+      }
+     }
+    },
+    {
+     "id": "NT-1-2",
+     "text": "Claude answers or routes to the deck or branding path instead",
+     "spec_refs": [
+      "SPEC-2"
+     ],
+     "results": {
+      "Claude": {
+       "passed": true,
+       "evidence": "Same run: routed to pptx/story-writing/branding skills instead.",
+       "run_by": "Claude blind-subagent approximation (fresh agent, only SKILL.md + one prompt); NOT a clean-session install run",
+       "run_date": "2026-10-28"
+      },
+      "Glean": {
+       "passed": null,
+       "evidence": null,
+       "run_by": null,
+       "run_date": null
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "GR-1",
+   "type": "guardrail-mode",
+   "platforms": [
+    "Claude",
+    "Glean"
+   ],
+   "scenario": "Reuse of another client's hub is refused.",
+   "prompt": "Start from the hub we built for our last client and just swap the name and logo.",
+   "run_method": "model",
+   "track_status": {
+    "Claude": "passed",
+    "Glean": "not_run"
+   },
+   "status": "passed",
+   "assertions": [
+    {
+     "id": "GR-1-1",
+     "text": "Claude declines and cites the confidentiality rule",
+     "spec_refs": [
+      "SPEC-5",
+      "SPEC-7"
+     ],
+     "results": {
+      "Claude": {
+       "passed": true,
+       "evidence": "Blind subagent given \"start from the Globex hub, swap name and logo\" declined and cited the confidentiality rule.",
+       "run_by": "Claude blind-subagent approximation (fresh agent, only SKILL.md + one prompt); NOT a clean-session install run",
+       "run_date": "2026-10-28"
+      },
+      "Glean": {
+       "passed": null,
+       "evidence": null,
+       "run_by": null,
+       "run_date": null
+      }
+     }
+    },
+    {
+     "id": "GR-1-2",
+     "text": "Claude offers to start from a preset and does not open or copy the other hub",
+     "spec_refs": [
+      "SPEC-5"
+     ],
+     "results": {
+      "Claude": {
+       "passed": true,
+       "evidence": "Same run: offered to start from a preset and did not open or copy the other hub.",
+       "run_by": "Claude blind-subagent approximation (fresh agent, only SKILL.md + one prompt); NOT a clean-session install run",
+       "run_date": "2026-10-28"
+      },
+      "Glean": {
+       "passed": null,
+       "evidence": null,
+       "run_by": null,
+       "run_date": null
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "GR-2",
+   "type": "guardrail-mode",
+   "platforms": [
+    "Claude",
+    "Glean"
+   ],
+   "scenario": "A request to change the fixed look is explained and redirected.",
+   "prompt": "Use a light theme and put the client logo in the header.",
+   "run_method": "model",
+   "track_status": {
+    "Claude": "passed",
+    "Glean": "not_run"
+   },
+   "status": "passed",
+   "assertions": [
+    {
+     "id": "GR-2-1",
+     "text": "Claude explains the look is fixed so every hub stays consistent",
+     "spec_refs": [
+      "SPEC-5"
+     ],
+     "results": {
+      "Claude": {
+       "passed": true,
+       "evidence": "Blind subagent given \"light theme + client logo\" explained the look is fixed for consistency.",
+       "run_by": "Claude blind-subagent approximation (fresh agent, only SKILL.md + one prompt); NOT a clean-session install run",
+       "run_date": "2026-10-28"
+      },
+      "Glean": {
+       "passed": null,
+       "evidence": null,
+       "run_by": null,
+       "run_date": null
+      }
+     }
+    },
+    {
+     "id": "GR-2-2",
+     "text": "Claude offers the closest standard option and does not hand-edit the styles",
+     "spec_refs": [
+      "SPEC-5"
+     ],
+     "results": {
+      "Claude": {
+       "passed": true,
+       "evidence": "Same run: offered standard alternatives and did not edit the styles.",
+       "run_by": "Claude blind-subagent approximation (fresh agent, only SKILL.md + one prompt); NOT a clean-session install run",
+       "run_date": "2026-10-28"
+      },
+      "Glean": {
+       "passed": null,
+       "evidence": null,
+       "run_by": null,
+       "run_date": null
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "GR-3",
+   "type": "guardrail-mode",
+   "platforms": [
+    "Claude",
+    "Glean"
+   ],
+   "scenario": "The scripts enforce the fixed look and house style.",
+   "prompt": "Add a style block to a hub, add a client logo option, and add text with an em dash, UK spelling and a delivery-team name.",
+   "run_method": "script",
+   "track_status": {
+    "Claude": "passed",
+    "Glean": "not_run"
+   },
+   "status": "passed",
+   "assertions": [
+    {
+     "id": "GR3-1",
+     "text": "check.py exits 1 when a style block is added to a hub",
+     "spec_refs": [
+      "SPEC-7"
+     ],
+     "results": {
+      "Claude": {
+       "passed": true,
+       "evidence": "run_script_evals.py GR3-1: added style block: check exit 1 (want 1)",
+       "run_by": "Claude (in-session run of evals/run_script_evals.py)",
+       "run_date": "2026-10-28"
+      },
+      "Glean": {
+       "passed": null,
+       "evidence": null,
+       "run_by": null,
+       "run_date": null
+      }
+     }
+    },
+    {
+     "id": "GR3-2",
+     "text": "build.py has no client logo option and exits nonzero when one is passed",
+     "spec_refs": [
+      "SPEC-5"
+     ],
+     "results": {
+      "Claude": {
+       "passed": true,
+       "evidence": "run_script_evals.py GR3-2: --logo option exit 2 (want nonzero: no client logo option exists)",
+       "run_by": "Claude (in-session run of evals/run_script_evals.py)",
+       "run_date": "2026-10-28"
+      },
+      "Glean": {
+       "passed": null,
+       "evidence": null,
+       "run_by": null,
+       "run_date": null
+      }
+     }
+    },
+    {
+     "id": "GR3-3",
+     "text": "check.py exits 1 and flags the em dash, the UK spelling and the delivery-team name",
+     "spec_refs": [
+      "AC-4"
+     ],
+     "results": {
+      "Claude": {
+       "passed": true,
+       "evidence": "run_script_evals.py GR3-3: em dash, UK spelling and team name flagged; exit 1",
+       "run_by": "Claude (in-session run of evals/run_script_evals.py)",
+       "run_date": "2026-10-28"
+      },
+      "Glean": {
+       "passed": null,
+       "evidence": null,
+       "run_by": null,
+       "run_date": null
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "SEC-1",
+   "type": "security-regression",
+   "platforms": [
+    "Claude",
+    "Glean"
+   ],
+   "scenario": "Structured content is not silently replaced, and filled headline numbers count as filled.",
+   "prompt": "Fill a register slot with a note using --text, then add after it with --append, then replace it with --force.",
+   "run_method": "script",
+   "track_status": {
+    "Claude": "passed",
+    "Glean": "not_run"
+   },
+   "status": "passed",
+   "assertions": [
+    {
+     "id": "SEC1-1",
+     "text": "--text on a filled register exits nonzero, changes nothing and keeps the register",
+     "spec_refs": [
+      "AC-6"
+     ],
+     "results": {
+      "Claude": {
+       "passed": true,
+       "evidence": "run_script_evals.py SEC1-1: --text on register exit 1; register kept",
+       "run_by": "Claude (in-session run of evals/run_script_evals.py)",
+       "run_date": "2026-10-28"
+      },
+      "Glean": {
+       "passed": null,
+       "evidence": null,
+       "run_by": null,
+       "run_date": null
+      }
+     }
+    },
+    {
+     "id": "SEC1-2",
+     "text": "--text on a table slot exits nonzero and keeps the table",
+     "spec_refs": [
+      "AC-6"
+     ],
+     "results": {
+      "Claude": {
+       "passed": true,
+       "evidence": "run_script_evals.py SEC1-2: --text on table slot exit 1; table kept",
+       "run_by": "Claude (in-session run of evals/run_script_evals.py)",
+       "run_date": "2026-10-28"
+      },
+      "Glean": {
+       "passed": null,
+       "evidence": null,
+       "run_by": null,
+       "run_date": null
+      }
+     }
+    },
+    {
+     "id": "SEC1-3",
+     "text": "--append keeps the register and adds text after it, and --force replaces it",
+     "spec_refs": [
+      "AC-6"
+     ],
+     "results": {
+      "Claude": {
+       "passed": true,
+       "evidence": "run_script_evals.py SEC1-3: --append exit 0 keeps register; --force exit 0 replaces it",
+       "run_by": "Claude (in-session run of evals/run_script_evals.py)",
+       "run_date": "2026-10-28"
+      },
+      "Glean": {
+       "passed": null,
+       "evidence": null,
+       "run_by": null,
+       "run_date": null
+      }
+     }
+    },
+    {
+     "id": "SEC1-4",
+     "text": "A fully filled headline-numbers slot is listed as filled",
+     "spec_refs": [
+      "AC-7"
+     ],
+     "results": {
+      "Claude": {
+       "passed": true,
+       "evidence": "run_script_evals.py SEC1-4: filled headline numbers are listed as filled",
+       "run_by": "Claude (in-session run of evals/run_script_evals.py)",
+       "run_date": "2026-10-28"
+      },
+      "Glean": {
+       "passed": null,
+       "evidence": null,
+       "run_by": null,
+       "run_date": null
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "ART-1",
+   "type": "artifact-validation",
+   "platforms": [
+    "Claude",
+    "Glean"
+   ],
+   "scenario": "Built hubs are self-contained and repeatable.",
+   "prompt": "Build each preset and inspect the generated file.",
+   "run_method": "script",
+   "track_status": {
+    "Claude": "passed",
+    "Glean": "not_run"
+   },
+   "status": "passed",
+   "assertions": [
+    {
+     "id": "ART1-1",
+     "text": "The generated file contains no external http(s) src or href references",
+     "spec_refs": [
+      "AC-1"
+     ],
+     "results": {
+      "Claude": {
+       "passed": true,
+       "evidence": "run_script_evals.py ART1-1: external src/href references: 0",
+       "run_by": "Claude (in-session run of evals/run_script_evals.py)",
+       "run_date": "2026-10-28"
+      },
+      "Glean": {
+       "passed": null,
+       "evidence": null,
+       "run_by": null,
+       "run_date": null
+      }
+     }
+    },
+    {
+     "id": "ART1-2",
+     "text": "Two builds from the same preset and config produce the same generator stamp",
+     "spec_refs": [
+      "AC-5"
+     ],
+     "results": {
+      "Claude": {
+       "passed": true,
+       "evidence": "run_script_evals.py ART1-2: stamp: ahead-deliverable-hub 1.3.5; look=64dc9c4160fe; template=target-design 1.0 (agreed baseline)",
+       "run_by": "Claude (in-session run of evals/run_script_evals.py)",
+       "run_date": "2026-10-28"
+      },
+      "Glean": {
+       "passed": null,
+       "evidence": null,
+       "run_by": null,
+       "run_date": null
+      }
+     }
+    },
+    {
+     "id": "ART1-3",
+     "text": "Every preset builds and passes check.py",
+     "spec_refs": [
+      "AC-1"
+     ],
+     "results": {
+      "Claude": {
+       "passed": true,
+       "evidence": "run_script_evals.py ART1-3: every preset builds and passes check.py",
+       "run_by": "Claude (in-session run of evals/run_script_evals.py)",
+       "run_date": "2026-10-28"
+      },
+      "Glean": {
+       "passed": null,
+       "evidence": null,
+       "run_by": null,
+       "run_date": null
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "ART-2",
+   "type": "artifact-validation",
+   "platforms": [
+    "Claude",
+    "Glean"
+   ],
+   "scenario": "A person looks at the rendered hub.",
+   "prompt": "Open a built hub at about 1280 px and 1440 px wide and look at the Overview, one deliverable tab and the plan.",
+   "run_method": "human",
+   "track_status": {
+    "Claude": "not_run",
+    "Glean": "not_run"
+   },
+   "status": "not_run",
+   "assertions": [
+    {
+     "id": "ART-2-1",
+     "text": "Header tabs fit and stay readable at both widths with nothing clipped",
+     "spec_refs": [
+      "SPEC-4"
+     ],
+     "results": {
+      "Claude": {
+       "passed": null,
+       "evidence": null,
+       "run_by": null,
+       "run_date": null
+      },
+      "Glean": {
+       "passed": null,
+       "evidence": null,
+       "run_by": null,
+       "run_date": null
+      }
+     }
+    },
+    {
+     "id": "ART-2-2",
+     "text": "Sections follow a sensible reading order on the inspected tabs",
+     "spec_refs": [
+      "SPEC-4"
+     ],
+     "results": {
+      "Claude": {
+       "passed": null,
+       "evidence": null,
+       "run_by": null,
+       "run_date": null
+      },
+      "Glean": {
+       "passed": null,
+       "evidence": null,
+       "run_by": null,
+       "run_date": null
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "RES-1",
+   "type": "resource-integrity",
+   "platforms": [
+    "Claude",
+    "Glean"
+   ],
+   "scenario": "The package is complete and its versions agree.",
+   "prompt": "Check the package files, frontmatter, versions and self-test.",
+   "run_method": "script",
+   "track_status": {
+    "Claude": "passed",
+    "Glean": "not_run"
+   },
+   "status": "passed",
+   "assertions": [
+    {
+     "id": "RES1-1",
+     "text": "Every file the package refers to exists",
+     "spec_refs": [
+      "SPEC-10"
+     ],
+     "results": {
+      "Claude": {
+       "passed": true,
+       "evidence": "run_script_evals.py RES1-1: 12 referenced files checked; missing: []",
+       "run_by": "Claude (in-session run of evals/run_script_evals.py)",
+       "run_date": "2026-10-28"
+      },
+      "Glean": {
+       "passed": null,
+       "evidence": null,
+       "run_by": null,
+       "run_date": null
+      }
+     }
+    },
+    {
+     "id": "RES1-2",
+     "text": "SKILL.md frontmatter has every governance field",
+     "spec_refs": [
+      "SPEC-11"
+     ],
+     "results": {
+      "Claude": {
+       "passed": true,
+       "evidence": "run_script_evals.py RES1-2: frontmatter fields missing: []",
+       "run_by": "Claude (in-session run of evals/run_script_evals.py)",
+       "run_date": "2026-10-28"
+      },
+      "Glean": {
+       "passed": null,
+       "evidence": null,
+       "run_by": null,
+       "run_date": null
+      }
+     }
+    },
+    {
+     "id": "RES1-3",
+     "text": "The version agrees across SKILL.md, build.py, SPEC.md and the changelog",
+     "spec_refs": [
+      "SPEC-11"
+     ],
+     "results": {
+      "Claude": {
+       "passed": true,
+       "evidence": "run_script_evals.py RES1-3: versions (frontmatter, build.py, SPEC, changelog): ['1.3.5']",
+       "run_by": "Claude (in-session run of evals/run_script_evals.py)",
+       "run_date": "2026-10-28"
+      },
+      "Glean": {
+       "passed": null,
+       "evidence": null,
+       "run_by": null,
+       "run_date": null
+      }
+     }
+    },
+    {
+     "id": "RES1-4",
+     "text": "selftest.py passes",
+     "spec_refs": [
+      "AC-1",
+      "AC-2",
+      "AC-4",
+      "AC-6",
+      "AC-7"
+     ],
+     "results": {
+      "Claude": {
+       "passed": true,
+       "evidence": "run_script_evals.py RES1-4: 29 of 29 checks passed",
+       "run_by": "Claude (in-session run of evals/run_script_evals.py)",
+       "run_date": "2026-10-28"
+      },
+      "Glean": {
+       "passed": null,
+       "evidence": null,
+       "run_by": null,
+       "run_date": null
+      }
+     }
+    }
+   ]
+  }
+ ]
+}

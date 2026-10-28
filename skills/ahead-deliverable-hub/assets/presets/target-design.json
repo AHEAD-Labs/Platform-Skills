@@ -1,0 +1,1129 @@
+{
+ "preset": "target-design",
+ "template": {
+  "name": "target-design",
+  "version": "1.0",
+  "status": "agreed baseline",
+  "source": "Agreed baseline of a target design package that is still in progress. Expect structural updates when that phase closes; see references/changelog.md."
+ },
+ "client": "Client",
+ "engagement": "Platform",
+ "phase_number": 2,
+ "date": "Package date",
+ "start_date": "",
+ "package": "{phase} Deliverable Package",
+ "owners": {},
+ "tabs": [
+  {
+   "key": "overview",
+   "label": "Overview",
+   "index": false,
+   "owner": "Principal Consultant",
+   "cover": {
+    "eyebrow": "{package} · {date}",
+    "title": "{client} {engagement}: {phase} Target Architecture",
+    "lede": "The {package}: {client}'s target architecture, how it is governed, onboarded, observed and operated, and the blueprint for building it in {next_phase}.",
+    "stats": {
+     "key": "overview-cover-stats",
+     "owner": "Principal Consultant",
+     "items": [
+      {
+       "label": "Architecture decisions",
+       "sub": "Recorded and agreed as ADRs"
+      },
+      {
+       "label": "Decisions agreed",
+       "sub": "Resolved with {client} during {phase}"
+      },
+      {
+       "label": "Workflows validated",
+       "sub": "Representative workflows tested against the design"
+      }
+     ]
+    }
+   },
+   "sections": [
+    {
+     "id": "summary",
+     "eyebrow": "{phase}",
+     "title": "Executive summary",
+     "blocks": [
+      {
+       "type": "lead",
+       "eyebrow": "Overall conclusion",
+       "key": "overview-conclusion-text",
+       "owner": "Principal Consultant",
+       "guide": "The overarching conclusion of {phase}, in two or three sentences: the position {client} is now in and why it matters for the platform."
+      },
+      {
+       "type": "cards",
+       "cols": 2,
+       "items": [
+        {
+         "title": "Our approach",
+         "key": "overview-approach",
+         "owner": "Principal Consultant",
+         "guide": "How {phase} was conducted: the design workshops, deep dives, workflow walkthroughs and technical demonstrations, and the {client} stakeholders engaged."
+        },
+        {
+         "title": "Key insights",
+         "key": "overview-insights",
+         "owner": "Principal Consultant",
+         "guide": "The three to five insights that most shaped the target design."
+        },
+        {
+         "title": "Current position",
+         "key": "overview-position",
+         "owner": "Principal Consultant",
+         "guide": "What has been agreed with {client}, what has been designed, and what remains open at handover."
+        },
+        {
+         "title": "The opportunity for {client}",
+         "key": "overview-opportunity",
+         "owner": "Principal Consultant",
+         "guide": "The value the target architecture creates for {client}'s teams and platforms."
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "id": "direction",
+     "eyebrow": "Target architecture",
+     "title": "Recommended direction",
+     "blocks": [
+      {
+       "type": "lead",
+       "eyebrow": "Summary",
+       "key": "overview-direction-text",
+       "owner": "Principal Consultant",
+       "guide": "A concise statement of the recommended architectural direction and its rationale for {client}, in three or four sentences. Describe the direction only; the architecture itself is presented on the Target Architecture tab.",
+       "note": "The target architecture is presented in full on the [Target Architecture](#architecture) tab."
+      }
+     ]
+    },
+    {
+     "id": "next",
+     "eyebrow": "{next_phase}",
+     "title": "Recommended next steps",
+     "blocks": [
+      {
+       "type": "lead",
+       "key": "overview-next-text",
+       "owner": "Principal Consultant",
+       "guide": "Two or three sentences on {client}'s position at the close of {phase} and the recommended focus for {next_phase}. If {next_phase} needs a separate agreement, present this as a recommendation rather than a commitment.",
+       "note": "The proposed work packages, sequencing and delivery options are set out in the [{next_phase} Build Blueprint](#blueprint)."
+      }
+     ]
+    },
+    {
+     "id": "index",
+     "eyebrow": "{package}",
+     "title": "Deliverable index",
+     "blocks": [
+      {
+       "type": "index"
+      }
+     ]
+    },
+    {
+     "id": "glossary",
+     "eyebrow": "Reference",
+     "title": "Glossary",
+     "blocks": [
+      {
+       "type": "glossary",
+       "key": "overview-glossary-terms",
+       "owner": "Engagement Lead",
+       "guide": "Definitions of the terms and acronyms used across the package."
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "key": "plan",
+   "label": "{phase} Delivery Plan",
+   "id": "D{p}.0",
+   "title": "{phase} Delivery Plan",
+   "owner": "Engagement Lead",
+   "question": "How {phase} was delivered: activities, workshops and reviews, sequencing, milestones, dependencies, owners and decision points.",
+   "hero": {
+    "chip": "D{p}.0",
+    "title": "{phase} Delivery Plan",
+    "lede": "How {phase} was delivered: activities, workshops and reviews, sequencing, milestones, dependencies, owners and decision points."
+   },
+   "sections": [
+    {
+     "id": "timeline",
+     "eyebrow": "Timeline",
+     "title": "Work plan",
+     "intro": "Four active-delivery weeks from kickoff to the design gate, followed by handoff and {client}'s response.",
+     "blocks": [
+      {
+       "type": "gantt",
+       "weeks": {
+        "start": "{start}",
+        "count": 4,
+        "after": 2
+       },
+       "rows": [
+        {
+         "id": "D{p}.0",
+         "title": "{phase} Delivery Plan",
+         "date": "Week 1",
+         "due": 1,
+         "tasks": []
+        },
+        {
+         "id": "D{p}.1A",
+         "title": "Target Architecture Baseline",
+         "date": "Week 2",
+         "due": 2,
+         "tasks": [
+          {
+           "id": "T-01",
+           "title": "Draft and align architecture principles",
+           "from": 1,
+           "to": 1
+          },
+          {
+           "id": "T-02",
+           "title": "Draft and align platform responsibility boundaries",
+           "from": 1,
+           "to": 2
+          },
+          {
+           "id": "T-03",
+           "title": "Draft target architecture and key ADRs",
+           "from": 2,
+           "to": 2,
+           "decision": 2
+          }
+         ]
+        },
+        {
+         "id": "D{p}.2",
+         "title": "Governance and Control Kit",
+         "date": "Week 3",
+         "due": 3,
+         "tasks": [
+          {
+           "id": "T-04",
+           "title": "Map existing controls to platform enforcement points",
+           "from": 1,
+           "to": 2
+          },
+          {
+           "id": "T-05",
+           "title": "Draft and align minimum control standards",
+           "from": 2,
+           "to": 3
+          }
+         ]
+        },
+        {
+         "id": "D{p}.4",
+         "title": "Observability and Evaluation Model",
+         "date": "Week 3",
+         "due": 3,
+         "tasks": [
+          {
+           "id": "T-06",
+           "title": "Confirm observability platform direction",
+           "from": 1,
+           "to": 2
+          },
+          {
+           "id": "T-07",
+           "title": "Draft tracing, audit and cost requirements",
+           "from": 2,
+           "to": 3
+          },
+          {
+           "id": "T-08",
+           "title": "Define evaluation approach and readiness checks",
+           "from": 2,
+           "to": 3
+          }
+         ]
+        },
+        {
+         "id": "D{p}.3",
+         "title": "Onboarding Model",
+         "date": "Week 4",
+         "due": 4,
+         "tasks": [
+          {
+           "id": "T-09",
+           "title": "Draft the onboarding lifecycle and review gates",
+           "from": 3,
+           "to": 4
+          },
+          {
+           "id": "T-10",
+           "title": "Create the manifest template and golden path",
+           "from": 3,
+           "to": 4
+          },
+          {
+           "id": "T-11",
+           "title": "Test with representative worked examples",
+           "from": 3,
+           "to": 4
+          }
+         ]
+        },
+        {
+         "id": "D{p}.5",
+         "title": "Operating Model",
+         "date": "Week 4",
+         "due": 4,
+         "tasks": [
+          {
+           "id": "T-12",
+           "title": "Draft and align ownership",
+           "from": 3,
+           "to": 4
+          },
+          {
+           "id": "T-13",
+           "title": "Define decision rights and governance cadence",
+           "from": 3,
+           "to": 4
+          },
+          {
+           "id": "T-14",
+           "title": "Define support, incident, change and escalation model",
+           "from": 3,
+           "to": 4
+          }
+         ]
+        },
+        {
+         "id": "D{p}.1B",
+         "title": "Final Target Architecture",
+         "date": "Week 4",
+         "due": 4,
+         "tasks": [
+          {
+           "id": "T-15",
+           "title": "Validate the design with workflow walkthroughs",
+           "from": 3,
+           "to": 3
+          },
+          {
+           "id": "T-16",
+           "title": "Bring the deliverables together into the final architecture",
+           "from": 3,
+           "to": 4
+          },
+          {
+           "id": "T-17",
+           "title": "Align the final architecture direction and finalize ADRs",
+           "from": 4,
+           "to": 4,
+           "decision": 4
+          }
+         ]
+        },
+        {
+         "id": "D{p}.6",
+         "title": "{next_phase} Build Blueprint",
+         "date": "Week 4",
+         "due": 4,
+         "tasks": [
+          {
+           "id": "T-18",
+           "title": "Build the {next_phase} implementation plan from the findings",
+           "from": 1,
+           "to": 4
+          }
+         ]
+        }
+       ],
+       "milestones": [
+        {
+         "id": "CP-01",
+         "title": "{phase} kickoff",
+         "date": "Week 1",
+         "week": 1
+        },
+        {
+         "id": "CP-02",
+         "title": "Design gate: {package} delivered",
+         "date": "Week 4",
+         "week": 4
+        },
+        {
+         "id": "CP-03",
+         "title": "Design handoff",
+         "date": "Week 5",
+         "week": 5
+        },
+        {
+         "id": "CP-04",
+         "title": "{client} response on the {package}",
+         "date": "Week 6",
+         "week": 6
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "id": "sessions",
+     "eyebrow": "Sessions",
+     "title": "Key sessions and reviews",
+     "blocks": [
+      {
+       "type": "table",
+       "key": "plan-sessions-table",
+       "owner": "Engagement Lead",
+       "editable": true,
+       "strong_first": true,
+       "columns": [
+        "When",
+        "Session",
+        "Purpose",
+        ""
+       ],
+       "guide": "One row per key session or review. Mark only the true decision points.",
+       "rows": [
+        [
+         "Week 1",
+         "{phase} kickoff",
+         "Objectives, team, plan and ways of working",
+         ""
+        ],
+        [
+         "Week 2",
+         "Target architecture draft review",
+         "Review the baseline and align on the target architecture direction",
+         "[star] Decision point"
+        ],
+        [
+         "Week 4",
+         "Final target architecture review",
+         "Align on the final architecture before the design gate",
+         "[star] Decision point"
+        ],
+        [
+         "Week 4",
+         "Design gate review",
+         "Review the {package} and the {next_phase} blueprint",
+         ""
+        ],
+        [
+         "Week 5",
+         "Design handoff and knowledge transfer",
+         "Walk {client} through the design, templates, ADRs and backlog",
+         ""
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "id": "cadence",
+     "eyebrow": "Ways of working",
+     "title": "Engagement cadence",
+     "blocks": [
+      {
+       "type": "table",
+       "key": "plan-cadence-table",
+       "owner": "Engagement Lead",
+       "editable": true,
+       "strong_first": true,
+       "columns": [
+        "When",
+        "Session",
+        "Purpose"
+       ],
+       "guide": "The recurring sessions and status reporting.",
+       "rows": [
+        [
+         "Weekly",
+         "Check-in",
+         "Progress, decisions needed, risks and the week ahead"
+        ],
+        [
+         "Twice weekly",
+         "Deep dives",
+         "Working sessions on the target architecture and open questions"
+        ],
+        [
+         "Weekly",
+         "Status email",
+         "Progress, priorities, open questions and inputs needed from {client}"
+        ]
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "key": "controls",
+   "label": "Governance and Control Kit",
+   "deliverable": {
+    "id": "D{p}.2",
+    "title": "Governance and Control Kit",
+    "owner": "Security Architect",
+    "question": "What standards and controls should govern the platform, and who is responsible for each?",
+    "sections": [
+     [
+      "topics",
+      "Control topics",
+      "The control topics the kit covers."
+     ],
+     [
+      "enforcement",
+      "Existing controls and enforcement points",
+      "{client}'s existing controls mapped to where the platform enforces them."
+     ],
+     [
+      "standards",
+      "Minimum control standards",
+      "The minimum standard for each control topic."
+     ],
+     [
+      "templates",
+      "Reusable design templates",
+      "The templates teams use to apply the standards."
+     ],
+     [
+      "responsibilities",
+      "Responsibility boundaries",
+      "Who is responsible for each control."
+     ],
+     [
+      "exceptions",
+      "Exceptions and escalation",
+      "How exceptions are requested, approved and escalated."
+     ],
+     [
+      "security",
+      "Integration with existing security services",
+      "How the kit integrates with {client}'s existing security services and tooling."
+     ],
+     [
+      "future",
+      "Future implementation requirements",
+      "What a later implementation must provide."
+     ],
+     [
+      "status",
+      "Designed, deployed and certified controls",
+      "A clear statement of which controls are designed only, and which are already deployed or certified."
+     ]
+    ],
+    "criteria": [
+     [
+      "Minimum standards for the listed control topics",
+      [
+       "standards"
+      ]
+     ],
+     [
+      "Reusable design templates",
+      [
+       "templates"
+      ]
+     ],
+     [
+      "Responsibility boundaries",
+      [
+       "responsibilities"
+      ]
+     ],
+     [
+      "Exception and escalation paths",
+      [
+       "exceptions"
+      ]
+     ],
+     [
+      "Integration with existing security services",
+      [
+       "security"
+      ]
+     ],
+     [
+      "Future implementation requirements",
+      [
+       "future"
+      ]
+     ],
+     [
+      "Designed controls clearly distinguished from deployed or certified controls",
+      [
+       "status"
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "key": "onboarding",
+   "label": "Onboarding Model",
+   "deliverable": {
+    "id": "D{p}.3",
+    "title": "Onboarding Model",
+    "owner": "Platform Engineer",
+    "question": "How are capabilities such as agents, tools, services and workflows onboarded and managed through their lifecycle?",
+    "sections": [
+     [
+      "types",
+      "Capability types",
+      "The types of capability the model covers and how each is treated."
+     ],
+     [
+      "lifecycle",
+      "Registration and lifecycle model",
+      "How a capability is registered and moves through its lifecycle."
+     ],
+     [
+      "gates",
+      "Risk and review gates",
+      "The gates a capability passes, and who reviews it at each."
+     ],
+     {
+      "key": "manifest",
+      "title": "Manifest template",
+      "guide": "Add one row per field every capability publishes.",
+      "columns": [
+       "Field",
+       "Description",
+       "Required",
+       "Example"
+      ]
+     },
+     [
+      "goldenpath",
+      "Golden path",
+      "The recommended route to onboard a capability, step by step."
+     ],
+     [
+      "readiness",
+      "Ownership, readiness and handoff",
+      "What an owner must provide before and after onboarding."
+     ],
+     [
+      "examples",
+      "Worked examples",
+      "Representative capabilities taken through the model, and what the walkthroughs found."
+     ],
+     [
+      "deps",
+      "Dependencies",
+      "What the onboarding model depends on."
+     ]
+    ],
+    "criteria": [
+     [
+      "Registration and lifecycle model",
+      [
+       "lifecycle"
+      ]
+     ],
+     [
+      "Manifest template",
+      [
+       "manifest"
+      ]
+     ],
+     [
+      "Golden-path pattern",
+      [
+       "goldenpath"
+      ]
+     ],
+     [
+      "Risk and review gates",
+      [
+       "gates"
+      ]
+     ],
+     [
+      "Ownership and readiness or handoff requirements",
+      [
+       "readiness"
+      ]
+     ],
+     [
+      "Representative worked examples or walkthrough findings",
+      [
+       "examples"
+      ]
+     ],
+     [
+      "Identified dependencies",
+      [
+       "deps"
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "key": "observability",
+   "label": "Observability and Evaluation Model",
+   "deliverable": {
+    "id": "D{p}.4",
+    "title": "Observability and Evaluation Model",
+    "owner": "Observability Architect",
+    "question": "What must be traced, logged, audited, costed and evaluated, and how is readiness demonstrated?",
+    "sections": [
+     [
+      "direction",
+      "Observability platform direction",
+      "The platform direction for observability."
+     ],
+     [
+      "tracing",
+      "Tracing and correlation",
+      "What must be traced, and how traces are correlated across boundaries."
+     ],
+     [
+      "logging",
+      "Logging and audit",
+      "What must be logged and audited, and for how long."
+     ],
+     [
+      "dashboards",
+      "Dashboards",
+      "The views operators and owners need."
+     ],
+     [
+      "cost",
+      "Cost visibility",
+      "How usage and cost are attributed and reported."
+     ],
+     [
+      "evaluation",
+      "Evaluation approach",
+      "How agents, tools and models are evaluated."
+     ],
+     [
+      "readiness",
+      "Readiness checks and evidence",
+      "The checks and evidence that show a capability is ready."
+     ],
+     [
+      "ownership",
+      "Ownership and integration dependencies",
+      "Who owns each part and what it depends on."
+     ],
+     [
+      "status",
+      "Requirements versus deployed monitoring",
+      "A clear statement of what is a requirement or design validation, and what is deployed monitoring, production testing or certification."
+     ]
+    ],
+    "criteria": [
+     [
+      "Trace, log and audit requirements",
+      [
+       "tracing",
+       "logging"
+      ]
+     ],
+     [
+      "Dashboard and cost requirements",
+      [
+       "dashboards",
+       "cost"
+      ]
+     ],
+     [
+      "Evaluation requirements",
+      [
+       "evaluation"
+      ]
+     ],
+     [
+      "Proposed readiness checks and evidence",
+      [
+       "readiness"
+      ]
+     ],
+     [
+      "Ownership and integration dependencies",
+      [
+       "ownership"
+      ]
+     ],
+     [
+      "Requirements and design validation distinguished from deployed monitoring, production testing and certification",
+      [
+       "status"
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "key": "operating",
+   "label": "Operating Model",
+   "deliverable": {
+    "id": "D{p}.5",
+    "title": "Operating Model",
+    "owner": "Operating Model Lead",
+    "question": "Who owns, decides, supports and escalates what across the platform?",
+    "sections": [
+     {
+      "key": "raci",
+      "title": "Ownership and RACI",
+      "guide": "Add one row per area: who is responsible, accountable, consulted and informed.",
+      "columns": [
+       "Area",
+       "Responsible",
+       "Accountable",
+       "Consulted",
+       "Informed"
+      ]
+     },
+     [
+      "rights",
+      "Decision rights",
+      "Who decides what, and where."
+     ],
+     [
+      "cadence",
+      "Governance cadence",
+      "The governance forums and how often they meet."
+     ],
+     [
+      "support",
+      "Support, incident, change and handoff",
+      "How the platform is supported, how incidents are handled, how change is controlled and how work is handed over."
+     ],
+     [
+      "escalation",
+      "Exceptions and escalation",
+      "How exceptions and escalations are handled."
+     ],
+     [
+      "assumptions",
+      "Organizational assumptions",
+      "Material assumptions about {client}'s organization."
+     ],
+     {
+      "key": "unresolved",
+      "title": "Unresolved ownership decisions",
+      "guide": "Add one row per unresolved ownership decision.",
+      "columns": [
+       "ID",
+       "Ownership decision",
+       "{client} owner",
+       "Next step",
+       "Due"
+      ]
+     }
+    ],
+    "criteria": [
+     [
+      "RACI or equivalent responsibility matrix",
+      [
+       "raci"
+      ]
+     ],
+     [
+      "Decision rights",
+      [
+       "rights"
+      ]
+     ],
+     [
+      "Governance cadence",
+      [
+       "cadence"
+      ]
+     ],
+     [
+      "Exception and escalation paths",
+      [
+       "escalation"
+      ]
+     ],
+     [
+      "Support, incident, change and handoff responsibilities",
+      [
+       "support"
+      ]
+     ],
+     [
+      "Material organizational assumptions",
+      [
+       "assumptions"
+      ]
+     ],
+     [
+      "Unresolved ownership decisions assigned an owner and next step",
+      [
+       "unresolved"
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "key": "architecture",
+   "label": "Target Architecture",
+   "deliverable": {
+    "id": "D{p}.1",
+    "title": "Target Architecture",
+    "owner": "Lead Architect",
+    "question": "What is {client}'s integrated target architecture, and which responsibilities, boundaries and decisions does it rest on?",
+    "sections": [
+     {
+      "key": "glance",
+      "title": "The target architecture",
+      "kind": "diagram",
+      "guide": "The final target architecture diagram, with a short caption. This is the single authoritative diagram and the first time the architecture is shown in the package; every detailed view below must be consistent with it."
+     },
+     [
+      "principles",
+      "Architecture principles",
+      "The principles the target architecture follows, as agreed with {client}."
+     ],
+     [
+      "scope",
+      "In-scope platforms",
+      "The platforms the architecture covers and how each one participates."
+     ],
+     [
+      "boundaries",
+      "Platform responsibility boundaries",
+      "What each platform and shared component is responsible for."
+     ],
+     {
+      "key": "patterns",
+      "title": "Logical and physical patterns",
+      "kind": "diagram",
+      "guide": "The detailed views behind the target architecture diagram: logical patterns, physical deployment and trust boundaries. Each must be consistent with the target architecture diagram above."
+     },
+     [
+      "integration",
+      "Control-plane and integration responsibilities",
+      "What the control plane does and how platforms integrate with it."
+     ],
+     [
+      "trust",
+      "Identity, trust and security boundaries",
+      "Where identity, trust and security boundaries sit, and how they are enforced."
+     ],
+     [
+      "data",
+      "Data, context and state",
+      "How data, context, memory and state are handled across the platform."
+     ],
+     [
+      "reuse",
+      "Existing platforms and capability matrix",
+      "The role of {client}'s existing platforms, and the capability matrix: what the platform needs, what {client} has, what existing products provide today and on their roadmap, gaps, overlaps and what to reuse."
+     ],
+     [
+      "validation",
+      "Workflow validation findings",
+      "What the representative workflow walkthroughs and demonstrations showed."
+     ],
+     {
+      "key": "adrs",
+      "title": "Architecture decision records",
+      "guide": "Add one row per ADR, with the decision and rationale in full.",
+      "columns": [
+       "ADR",
+       "Title",
+       "Decision",
+       "Rationale",
+       "Status",
+       "Date"
+      ]
+     },
+     [
+      "journey",
+      "Evolution from baseline to final architecture",
+      "What changed between the baseline review and the final architecture, and why."
+     ],
+     [
+      "open",
+      "Assumptions, dependencies, limitations and open decisions",
+      "What remains open at handover, each with an owner and next step."
+     ]
+    ],
+    "criteria": [
+     [
+      "Integrated target architecture covering the in-scope platforms",
+      [
+       "glance",
+       "scope"
+      ]
+     ],
+     [
+      "Logical and physical patterns",
+      [
+       "patterns"
+      ]
+     ],
+     [
+      "Control-plane and integration responsibilities",
+      [
+       "integration"
+      ]
+     ],
+     [
+      "Identity, trust, data, context, state and security boundaries",
+      [
+       "trust",
+       "data"
+      ]
+     ],
+     [
+      "Architecture decision records",
+      [
+       "adrs"
+      ]
+     ],
+     [
+      "Representative workflow validation findings",
+      [
+       "validation"
+      ]
+     ],
+     [
+      "Assumptions, dependencies, limitations and open decisions",
+      [
+       "open"
+      ]
+     ],
+     [
+      "Role of existing platforms and capability matrix",
+      [
+       "reuse"
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "key": "blueprint",
+   "label": "{next_phase} Build Blueprint",
+   "deliverable": {
+    "id": "D{p}.6",
+    "title": "{next_phase} Build Blueprint",
+    "owner": "Engagement Lead",
+    "question": "What should {next_phase} build, in what order, and with what team and commercial options?",
+    "sections": [
+     {
+      "key": "packages",
+      "title": "Prioritized work packages",
+      "guide": "Add one row per {next_phase} work package, in priority order.",
+      "columns": [
+       "WP",
+       "Work package",
+       "Outcome",
+       "Priority",
+       "Depends on"
+      ]
+     },
+     [
+      "criteria",
+      "Acceptance and readiness criteria",
+      "Proposed criteria for each work package."
+     ],
+     [
+      "sequencing",
+      "Dependencies and sequencing",
+      "The order of work and what each package depends on."
+     ],
+     [
+      "reuse",
+      "Role of existing platforms and integration points",
+      "A clear position on the role of {client}'s existing platforms and the key integration points."
+     ],
+     [
+      "team",
+      "Team structure and sprint sizing",
+      "Indicative team structure, pod composition and sprint sizing."
+     ],
+     [
+      "commercial",
+      "Commercial options",
+      "Indicative commercial options for {next_phase}."
+     ],
+     {
+      "key": "openitems",
+      "title": "Consolidated decisions and open items",
+      "guide": "Add one row per decision or open item from across {phase}, each with a {client} owner and next step. Draw them from the decisions table on each deliverable tab.",
+      "columns": [
+       "ID",
+       "Decision or open item",
+       "Deliverable",
+       "{client} owner",
+       "Next step",
+       "Due"
+      ]
+     },
+     [
+      "gate",
+      "Design gate review",
+      "The outcome of the design gate review."
+     ]
+    ],
+    "criteria": [
+     [
+      "Prioritized build work packages",
+      [
+       "packages"
+      ]
+     ],
+     [
+      "Proposed acceptance and readiness criteria",
+      [
+       "criteria"
+      ]
+     ],
+     [
+      "Dependencies and sequencing",
+      [
+       "sequencing"
+      ]
+     ],
+     [
+      "Clear position on the role of existing platforms and key integration points",
+      [
+       "reuse"
+      ]
+     ],
+     [
+      "Indicative team and sprint sizing",
+      [
+       "team"
+      ]
+     ],
+     [
+      "Commercial options",
+      [
+       "commercial"
+      ]
+     ],
+     [
+      "Consolidated decisions and open items with owners and next steps",
+      [
+       "openitems"
+      ]
+     ],
+     [
+      "Design gate review conducted or offered",
+      [
+       "gate"
+      ]
+     ]
+    ],
+    "decisions": false
+   }
+  }
+ ]
+}

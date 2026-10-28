@@ -1,0 +1,793 @@
+{
+ "preset": "discovery",
+ "template": {
+  "name": "discovery",
+  "version": "1.0",
+  "status": "delivered",
+  "source": "Structure of a discovery hub AHEAD has delivered."
+ },
+ "client": "Client",
+ "engagement": "Platform",
+ "phase_number": 1,
+ "date": "Readout date",
+ "package": "{phase} Discovery Hub",
+ "owners": {},
+ "tabs": [
+  {
+   "key": "overview",
+   "label": "Overview",
+   "index": false,
+   "owner": "Principal Consultant",
+   "cover": {
+    "eyebrow": "{package} · {date}",
+    "title": "{client} {engagement}: {phase} Discovery Findings",
+    "lede": "What {phase} found across {client}'s current estate, what it means for the target architecture, and what {next_phase} should design.",
+    "stats": {
+     "key": "overview-cover-stats",
+     "owner": "Principal Consultant",
+     "items": [
+      {
+       "label": "Sessions held",
+       "sub": "Workshops and deep dives with {client}"
+      },
+      {
+       "label": "Platforms assessed",
+       "sub": "Across the current estate"
+      },
+      {
+       "label": "Hypotheses tested",
+       "sub": "Against sessions, documents and tests"
+      },
+      {
+       "label": "Decisions recorded",
+       "sub": "Carried into {next_phase}"
+      }
+     ]
+    }
+   },
+   "sections": [
+    {
+     "id": "summary",
+     "eyebrow": "Executive summary",
+     "title": "Headline finding",
+     "blocks": [
+      {
+       "type": "lead",
+       "eyebrow": "Headline conclusion",
+       "key": "overview-headline-text",
+       "guide": "The overarching finding of {phase} in two or three sentences, written as a conclusion rather than a description of the work. This is the message the readout opens with."
+      },
+      {
+       "type": "cards",
+       "cols": 2,
+       "items": [
+        {
+         "eyebrow": "Architecture implication",
+         "title": "What it means for the architecture",
+         "key": "overview-arch-implication",
+         "guide": "The one or two architectural consequences of the headline finding, stated as direction rather than design."
+        },
+        {
+         "eyebrow": "{next_phase} implication",
+         "title": "What {next_phase} should focus on",
+         "key": "overview-next-implication",
+         "guide": "Where {next_phase} should concentrate its design effort, and why."
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "id": "established",
+     "eyebrow": "Outcomes",
+     "title": "What {phase} established",
+     "blocks": [
+      {
+       "type": "slot",
+       "key": "overview-established-text",
+       "guide": "The five to seven findings that matter most, one sentence each, each traceable to the register or to a named session, document or test."
+      }
+     ]
+    },
+    {
+     "id": "approach",
+     "eyebrow": "Our process",
+     "title": "Evidence behind the findings",
+     "intro": "Every finding in this hub rests on one or more of these evidence streams.",
+     "blocks": [
+      {
+       "type": "cards",
+       "cols": 2,
+       "items": [
+        {
+         "title": "Key sessions with {client}",
+         "key": "overview-ev-sessions",
+         "guide": "The workshops and deep dives held, who from {client} took part (by role), and what each covered."
+        },
+        {
+         "title": "Documentation and artefact review",
+         "key": "overview-ev-docs",
+         "guide": "The documents, diagrams and repositories reviewed, and what they were used to confirm."
+        },
+        {
+         "title": "Architecture review",
+         "key": "overview-ev-arch",
+         "owner": "Lead Architect",
+         "guide": "How the delivery team's architects tested and challenged the emerging hypotheses."
+        },
+        {
+         "title": "Feasibility testing",
+         "key": "overview-ev-tests",
+         "owner": "Lead Architect",
+         "guide": "The hands-on tests run, and what they were designed to prove or disprove."
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "id": "contents",
+     "eyebrow": "How to use this hub",
+     "title": "Contents",
+     "blocks": [
+      {
+       "type": "index"
+      }
+     ]
+    },
+    {
+     "id": "deliverables",
+     "eyebrow": "Index",
+     "title": "Deliverables and where to find them",
+     "blocks": [
+      {
+       "type": "table",
+       "key": "overview-deliverables-table",
+       "owner": "Engagement Lead",
+       "columns": [
+        "Deliverable",
+        "What it contains",
+        "Where to find it"
+       ],
+       "guide": "One row per contracted deliverable, named exactly as in the SOW, with the tab that contains it."
+      }
+     ]
+    },
+    {
+     "id": "terms",
+     "eyebrow": "Reference",
+     "title": "Key terms used in this hub",
+     "blocks": [
+      {
+       "type": "glossary",
+       "key": "overview-terms-list",
+       "owner": "Engagement Lead",
+       "guide": "Definitions of the terms and acronyms used across the hub."
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "key": "register",
+   "label": "Hypothesis and Decision Register",
+   "title": "Hypothesis and Decision Register",
+   "owner": "Lead Architect",
+   "question": "Every hypothesis tested, decision recorded and experiment run, with the evidence behind it and what it means for {next_phase}.",
+   "hero": {
+    "eyebrow": "Register",
+    "title": "Hypotheses, decisions and experiments",
+    "lede": "Every hypothesis tested, decision recorded and experiment run in {phase}, with the evidence behind it and what it means for {next_phase}."
+   },
+   "sections": [
+    {
+     "id": "read",
+     "title": "How to read the register",
+     "blocks": [
+      {
+       "type": "slot",
+       "key": "register-read-text",
+       "guide": "How items are identified, prioritized and given a status. Keep High priority for the few items that shape the architecture."
+      }
+     ]
+    },
+    {
+     "id": "items",
+     "title": "The register",
+     "blocks": [
+      {
+       "type": "register",
+       "key": "register-items-list",
+       "guide": "The register is generated from the config items or a CSV/XLSX file (items_file). Each item needs an ID, type, title, statement, priority, status, area, evidence and next step."
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "key": "estate",
+   "label": "Current-State Estate",
+   "title": "Current-State Estate",
+   "owner": "Platform Architect",
+   "question": "What {client} runs today, who uses it and how, and what the current estate tells us.",
+   "hero": {
+    "eyebrow": "Current state only",
+    "title": "{client}'s current estate",
+    "lede": "What {client} runs today, who uses it and how. This tab describes the current state only; direction is set out on the Architecture Hypothesis tab."
+   },
+   "sections": [
+    {
+     "id": "tells",
+     "title": "What the current estate tells us",
+     "blocks": [
+      {
+       "type": "slot",
+       "key": "estate-tells-text",
+       "guide": "Three to five observations about the estate as a whole, each with the evidence behind it."
+      }
+     ]
+    },
+    {
+     "id": "platforms",
+     "title": "Platforms and shared capabilities",
+     "blocks": [
+      {
+       "type": "table",
+       "key": "estate-platforms-table",
+       "columns": [
+        "Platform",
+        "What it does",
+        "Users and scale",
+        "Owning team",
+        "Evidence"
+       ],
+       "guide": "One row per platform or shared capability in scope."
+      }
+     ]
+    },
+    {
+     "id": "context",
+     "title": "User and project context",
+     "blocks": [
+      {
+       "type": "slot",
+       "key": "estate-context-text",
+       "guide": "The user groups, projects and workflows the estate serves, and how their needs differ."
+      }
+     ]
+    },
+    {
+     "id": "usage",
+     "title": "How the estate is used",
+     "blocks": [
+      {
+       "type": "slot",
+       "key": "estate-usage-text",
+       "guide": "Representative implementations and workflows, described as they work today."
+      }
+     ]
+    },
+    {
+     "id": "limits",
+     "title": "Current-state evidence limitations",
+     "blocks": [
+      {
+       "type": "slot",
+       "key": "estate-limits-text",
+       "guide": "What could not be seen or confirmed in {phase}, and how that affects confidence in the findings."
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "key": "maturity",
+   "label": "Maturity Assessment",
+   "title": "Maturity Assessment",
+   "owner": "Platform Architect",
+   "question": "How mature each platform is in design and in implementation, dimension by dimension.",
+   "hero": {
+    "eyebrow": "Maturity",
+    "title": "Design and implementation maturity",
+    "lede": "How mature each platform is, scored dimension by dimension against a common rubric."
+   },
+   "sections": [
+    {
+     "id": "overview",
+     "title": "What the scores show",
+     "blocks": [
+      {
+       "type": "slot",
+       "key": "maturity-overview-text",
+       "guide": "The headline pattern across the estate, and how scoring works: who scored, against what evidence, and how design and implementation differ."
+      }
+     ]
+    },
+    {
+     "id": "heatmap",
+     "title": "Dimension heatmap",
+     "blocks": [
+      {
+       "type": "heatmap",
+       "key": "maturity-heatmap-grid",
+       "rows": [],
+       "columns": [],
+       "scale": {
+        "min": 0,
+        "max": 4,
+        "labels": {
+         "0": "Absent",
+         "1": "Initial",
+         "2": "Developing",
+         "3": "Defined",
+         "4": "Managed"
+        }
+       },
+       "guide": "Scores per platform (rows) and dimension (columns), generated from the config. Add a note per cell to explain each score."
+      }
+     ]
+    },
+    {
+     "id": "patterns",
+     "title": "Cross-estate patterns and actions",
+     "blocks": [
+      {
+       "type": "slot",
+       "key": "maturity-patterns-text",
+       "guide": "The patterns the heatmap reveals and the action each one implies for {next_phase}."
+      }
+     ]
+    },
+    {
+     "id": "rubric",
+     "title": "The rubric",
+     "blocks": [
+      {
+       "type": "table",
+       "key": "maturity-rubric-table",
+       "editable": true,
+       "strong_first": true,
+       "columns": [
+        "Score",
+        "Level",
+        "What it means"
+       ],
+       "guide": "Confirm the rubric with the team before scoring.",
+       "rows": [
+        [
+         "0",
+         "Absent",
+         "No capability in place."
+        ],
+        [
+         "1",
+         "Initial",
+         "Ad hoc, dependent on individuals."
+        ],
+        [
+         "2",
+         "Developing",
+         "In place for some teams or platforms, not yet consistent."
+        ],
+        [
+         "3",
+         "Defined",
+         "Documented, consistent and owned."
+        ],
+        [
+         "4",
+         "Managed",
+         "Measured, monitored and improved over time."
+        ]
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "key": "controls",
+   "label": "Control Assessment",
+   "title": "Control and Governance Assessment",
+   "owner": "Security Architect",
+   "question": "Where controls and governance hold across the estate, and where they lose consistency.",
+   "hero": {
+    "eyebrow": "Control and governance gap assessment",
+    "title": "Control and governance posture",
+    "lede": "Where controls hold across the estate, and where they lose consistency."
+   },
+   "sections": [
+    {
+     "id": "headline",
+     "title": "The control posture in brief",
+     "blocks": [
+      {
+       "type": "slot",
+       "key": "controls-headline-text",
+       "guide": "The headline finding on controls and governance, and the pattern across the estate."
+      }
+     ]
+    },
+    {
+     "id": "heatmap",
+     "title": "Control posture heatmap",
+     "blocks": [
+      {
+       "type": "heatmap",
+       "key": "controls-heatmap-grid",
+       "rows": [],
+       "columns": [],
+       "scale": {
+        "min": 0,
+        "max": 4,
+        "labels": {
+         "0": "Absent",
+         "1": "Initial",
+         "2": "Developing",
+         "3": "Defined",
+         "4": "Managed"
+        }
+       },
+       "guide": "Scores per platform (rows) and control domain (columns), generated from the config."
+      }
+     ]
+    },
+    {
+     "id": "domains",
+     "title": "Control domains: evidence behind the scores",
+     "blocks": [
+      {
+       "type": "table",
+       "key": "controls-domains-table",
+       "columns": [
+        "Domain",
+        "What we found",
+        "Evidence",
+        "Gap"
+       ],
+       "guide": "One row per control domain."
+      }
+     ]
+    },
+    {
+     "id": "questions",
+     "title": "Questions that affect the {next_phase} architecture",
+     "blocks": [
+      {
+       "type": "table",
+       "key": "controls-questions-table",
+       "columns": [
+        "ID",
+        "Question",
+        "Why it matters",
+        "{client} owner"
+       ],
+       "guide": "One row per open control question."
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "key": "architecture",
+   "label": "Architecture Hypothesis",
+   "title": "Architecture Hypothesis",
+   "owner": "Lead Architect",
+   "question": "The requirements the future architecture must meet, the current-state architecture, and the hypothesis {next_phase} will design against.",
+   "hero": {
+    "eyebrow": "Architecture",
+    "title": "Architecture hypothesis",
+    "lede": "The requirements the future architecture must meet, the current-state architecture, and the hypothesis {next_phase} will design against. This is a hypothesis, not a design."
+   },
+   "sections": [
+    {
+     "id": "requirements",
+     "title": "Architectural requirements",
+     "blocks": [
+      {
+       "type": "slot",
+       "key": "architecture-requirements-text",
+       "guide": "The requirements the future architecture must satisfy, each a short title and one or two sentences, each traceable to the register."
+      }
+     ]
+    },
+    {
+     "id": "current",
+     "title": "Current-state architecture",
+     "blocks": [
+      {
+       "type": "figure",
+       "key": "architecture-current-figure",
+       "guide": "The current-state architecture as {client} runs it today, with a caption."
+      }
+     ]
+    },
+    {
+     "id": "hypothesis",
+     "title": "Logical architecture hypothesis",
+     "blocks": [
+      {
+       "type": "figure",
+       "key": "architecture-hypothesis-figure",
+       "guide": "The logical architecture hypothesis, clearly labelled as a hypothesis, with a caption."
+      },
+      {
+       "type": "slot",
+       "key": "architecture-hypothesis-text",
+       "guide": "What the hypothesis proposes, component by component, and the evidence behind each part."
+      }
+     ]
+    },
+    {
+     "id": "views",
+     "title": "Architecture direction views",
+     "blocks": [
+      {
+       "type": "slot",
+       "key": "architecture-views-text",
+       "guide": "The direction for each architectural concern (for example identity, observability, data), each with its evidence and confidence."
+      }
+     ]
+    },
+    {
+     "id": "contract",
+     "title": "Common platform contract",
+     "blocks": [
+      {
+       "type": "slot",
+       "key": "architecture-contract-text",
+       "guide": "The minimum every platform should meet at its edges (for example identity, telemetry, lifecycle and data controls), presented as the team's current view for {next_phase} to design."
+      }
+     ]
+    },
+    {
+     "id": "open",
+     "title": "What still needs to be resolved",
+     "blocks": [
+      {
+       "type": "table",
+       "key": "architecture-open-table",
+       "columns": [
+        "Topic",
+        "Open question",
+        "Options",
+        "Resolve in"
+       ],
+       "guide": "One row per open architectural question."
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "key": "validation",
+   "label": "Feasibility Validation",
+   "title": "Feasibility Validation",
+   "owner": "Lead Architect",
+   "question": "What the feasibility tests proved, what they did not, and what should be tested next.",
+   "hero": {
+    "eyebrow": "Validation",
+    "title": "What {phase} proved, and what it did not",
+    "lede": "The feasibility tests run in {phase}, what each showed, and what should be tested next."
+   },
+   "sections": [
+    {
+     "id": "headline",
+     "title": "Validation summary",
+     "blocks": [
+      {
+       "type": "lead",
+       "eyebrow": "Phase summary",
+       "key": "validation-headline-text",
+       "guide": "Two or three sentences on what the tests proved, what they did not, and what that means for the architecture."
+      }
+     ]
+    },
+    {
+     "id": "results",
+     "title": "Results at a glance",
+     "blocks": [
+      {
+       "type": "table",
+       "key": "validation-results-table",
+       "columns": [
+        "Test",
+        "Area",
+        "What was tested",
+        "Result",
+        "Evidence"
+       ],
+       "guide": "One row per test. Write results as [ok] Proven, [warn] Partially proven or [bad] Not proven."
+      }
+     ]
+    },
+    {
+     "id": "findings",
+     "title": "Cross-cutting findings",
+     "blocks": [
+      {
+       "type": "slot",
+       "key": "validation-findings-text",
+       "guide": "The findings that cut across tests."
+      }
+     ]
+    },
+    {
+     "id": "notation",
+     "title": "Scoring and notation",
+     "blocks": [
+      {
+       "type": "slot",
+       "key": "validation-notation-text",
+       "guide": "How results were scored and what each result label means."
+      }
+     ]
+    },
+    {
+     "id": "tests",
+     "title": "The tests in detail",
+     "blocks": [
+      {
+       "type": "slot",
+       "key": "validation-tests-text",
+       "guide": "Each test in turn: objective, set-up, result and what it means."
+      }
+     ]
+    },
+    {
+     "id": "spikes",
+     "title": "Validation spikes, ranked",
+     "blocks": [
+      {
+       "type": "table",
+       "key": "validation-spikes-table",
+       "columns": [
+        "Rank",
+        "Spike",
+        "Why it matters",
+        "Resolves"
+       ],
+       "guide": "The tests {next_phase} should run next, in priority order."
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "key": "handover",
+   "label": "{phase} to {next_phase}",
+   "title": "{phase} to {next_phase}",
+   "owner": "Engagement Lead",
+   "question": "What {next_phase} reuses, selects and standardizes, and the decisions it must take.",
+   "hero": {
+    "eyebrow": "{next_phase} scope",
+    "title": "What {next_phase} reuses, selects and standardizes",
+    "lede": "How {phase} findings translate into the scope of {next_phase}."
+   },
+   "sections": [
+    {
+     "id": "scope",
+     "title": "{next_phase} scope",
+     "blocks": [
+      {
+       "type": "slot",
+       "key": "handover-scope-text",
+       "guide": "The scope of {next_phase} in a few sentences, and the principle behind it (for example reuse what works, standardize the edges)."
+      }
+     ]
+    },
+    {
+     "id": "positions",
+     "title": "Position by capability",
+     "blocks": [
+      {
+       "type": "table",
+       "key": "handover-positions-table",
+       "columns": [
+        "Capability",
+        "Position",
+        "Rationale",
+        "Evidence"
+       ],
+       "guide": "One row per capability. Write positions as [ok] Reuse, [info] Select or [warn] Standardize."
+      }
+     ]
+    },
+    {
+     "id": "decisions",
+     "title": "Decisions {next_phase} must take",
+     "blocks": [
+      {
+       "type": "table",
+       "key": "handover-decisions-table",
+       "columns": [
+        "ID",
+        "Decision",
+        "Options",
+        "{client} owner",
+        "By when"
+       ],
+       "guide": "One row per decision carried into {next_phase}."
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "key": "evidence",
+   "label": "Evidence Base",
+   "title": "Evidence Base",
+   "owner": "Engagement Lead",
+   "question": "The sessions, materials and assumptions behind every finding.",
+   "hero": {
+    "eyebrow": "Evidence base",
+    "title": "Evidence, assumptions and visibility",
+    "lede": "The sessions, materials and assumptions behind every finding in this hub."
+   },
+   "sections": [
+    {
+     "id": "base",
+     "title": "How the evidence was gathered",
+     "blocks": [
+      {
+       "type": "slot",
+       "key": "evidence-base-text",
+       "guide": "How evidence was gathered and graded, and where visibility was limited."
+      }
+     ]
+    },
+    {
+     "id": "sessions",
+     "title": "Sessions held",
+     "blocks": [
+      {
+       "type": "table",
+       "key": "evidence-sessions-table",
+       "columns": [
+        "Date",
+        "Session",
+        "{client} participants (by role)",
+        "Focus"
+       ],
+       "guide": "One row per session."
+      }
+     ]
+    },
+    {
+     "id": "materials",
+     "title": "Materials reviewed",
+     "blocks": [
+      {
+       "type": "table",
+       "key": "evidence-materials-table",
+       "columns": [
+        "Material",
+        "Provided by",
+        "Date",
+        "Used for"
+       ],
+       "guide": "One row per document, diagram or repository reviewed."
+      }
+     ]
+    },
+    {
+     "id": "assumptions",
+     "title": "Assumptions",
+     "blocks": [
+      {
+       "type": "table",
+       "key": "evidence-assumptions-table",
+       "columns": [
+        "ID",
+        "Assumption",
+        "Impact if wrong",
+        "How to validate"
+       ],
+       "guide": "One row per material assumption."
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}
