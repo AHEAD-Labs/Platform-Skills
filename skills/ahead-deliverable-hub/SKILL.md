@@ -1,7 +1,7 @@
 ---
 name: ahead-deliverable-hub
 description: Builds AHEAD deliverable hubs, which are branded, self-contained HTML websites that hold an engagement's deliverables. Starts from one of two templates (the Phase 1 discovery template or the Phase 2 target design template) or builds a custom hub from the deliverables in an SOW, for any phase or engagement. Use it whenever an AHEAD consultant asks for a deliverable hub, a hub or website for an engagement or phase, a discovery hub, a target design or deliverable package, a readout site or an HTML deliverable, or a template the team can fill in parallel, even if they never say "hub". Also use it to fill, check or hand over an existing hub file.
-version: 1.3.5
+version: 1.3.7
 owner: ethan.cunningham@ahead.com
 team: AI HIVE
 approved-by: Michal Lubas (AHEAD distribution, via Teams, 2026-10-27); AHEAD eTech team / Enterprise GPT team, via Grace, following a review call (2026-10-28)
@@ -169,6 +169,10 @@ These came from client and principal feedback on AHEAD's hubs. Each has a reason
 - **Decisions.** Each deliverable tab has its own decisions table. The forward-looking tab consolidates them, and the architecture tab holds the ADRs. Mark only true decision points (usually two) with a star.
 - **Plan.** The key sits above the gantt. Remove plan-change history; the plan shows the plan.
 - **Styling.** The bundled styles (`assets/hub.css`) are the only styles. Gradients run at 69 degrees and only brand colors are used. For reusable, org-wide or GTM material, the `ahead-branding` skill's Brand review route applies.
+
+## Maintainer tools, not part of normal use
+
+`scripts/selftest.py`, `evals/run_script_evals.py` and the `evals/` folder are for people maintaining this skill, not for producing a hub. When someone asks you to build, fill, check, hand over, demo or try out a hub, do not run selftest or the evals, do not read `evals/`, and do not report self-test output, evaluation results, version internals or a list of bugs. Just build, fill, check or demonstrate the hub itself. "Try it out" or "demo it" means build a sample hub from made-up details and show that, not run the skill's tests. Run the maintainer tools only when the user explicitly asks to test or maintain the skill itself. `check.py` is not a maintainer tool: it is the QA step for the hub you are delivering, so run it as Step 4 describes.
 
 ## Scripts
 

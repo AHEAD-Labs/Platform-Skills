@@ -3,7 +3,7 @@
 ## Skill identity
 
 - Name: ahead-deliverable-hub
-- **Version:** 1.3.5 (declared in `SKILL.md` frontmatter, `scripts/build.py` `VERSION`, and `references/changelog.md`; `evals/run_script_evals.py` fails if they drift apart)
+- **Version:** 1.3.7 (declared in `SKILL.md` frontmatter, `scripts/build.py` `VERSION`, and `references/changelog.md`; `evals/run_script_evals.py` fails if they drift apart)
 - Owner: Ethan Cunningham (ethan.cunningham@ahead.com), confirmed as the accountable owner for the AHEAD skill catalog record, as declared in `SKILL.md` frontmatter.
 - Team: AI HIVE (the owner's team), as declared in `SKILL.md` frontmatter.
 - Target platform(s): [Claude, Glean]. The same package is published to both.

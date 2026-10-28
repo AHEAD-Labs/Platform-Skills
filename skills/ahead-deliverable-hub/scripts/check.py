@@ -8,6 +8,9 @@ Owners named on slots are treated as delivery-team names and flagged if they app
 """
 import argparse, collections, html as H, re, sys
 from html.parser import HTMLParser
+# Make this script's own folder importable even when PYTHONSAFEPATH is set (e.g. the Glean sandbox).
+import sys as _sys, pathlib as _pathlib
+_sys.path.insert(0, str(_pathlib.Path(__file__).resolve().parent))
 from guide import slots
 
 BANNED = [  # casual, hype or filler phrasing that does not belong in a client deliverable
