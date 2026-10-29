@@ -11,7 +11,7 @@ Facts marked *(owner)* come from the model owner; the rest were verified live.
 
 ### Reading this model's structure
 
-- Useful column names for deal-level detail: `DIM_OPPORTUNITY[OPPORTUNITY_NAME]`, `[STAGENAME]`, `[PROBABILITY]`, `[HAS_SSE]`, `[SOLUTION_LEAD]`; `FCT_OPPTYLINE_SPLIT[LOSS_REASON]`; `DIM_OPPORTUNITY_TEAM[TEAM_MEMBER_ROLE]`. Applying the SSE role filter via `TREATAS` or a plain column filter both work.
+- Useful column names for deal-level detail: `DIM_OPPORTUNITY[OPPORTUNITY_NAME]`, `[STAGENAME]`, `[PROBABILITY]`, `[HAS_SSE]`, `[SOLUTION_LEAD]`; `DIM_OPPORTUNITY[LOSS_REASON]`; `DIM_OPPORTUNITY_TEAM[TEAM_MEMBER_ROLE]`. Applying the SSE role filter via `TREATAS` or a plain column filter both work.
 
 ### Fiscal calendar and dates
 

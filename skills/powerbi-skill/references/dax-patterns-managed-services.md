@@ -34,7 +34,7 @@ Facts marked *(owner)* come from the model owner; the rest were verified live.
 
 ### Booked, pipeline, and delivered
 
-- Booked = won opportunity lines (`PROBABILITY = 100`, `IS_BOOKING = TRUE`) dated by close date, gross margin ACV (not Core's commissionable margin; label the basis).
+- Booked = won opportunity lines (`DIM_OPPORTUNITY[IS_WON] = TRUE`, `IS_BOOKING = TRUE`) dated by close date, gross margin ACV (not Core's commissionable margin; label the basis).
 - *(owner)* Delivered revenue is `Delivered Revenue` = sum of `FCT_DELIVERED_FINANCIALS[REVENUE]` for `DIM_PRACTICE[L1] = "Managed (L1)"` (Adaptive actuals by month). Use that measure as-is.
 - `Book to Bill` divides booked by delivered over the same filter; with a full-year filter the booked side includes future-dated closes with no delivery yet. For a clean figure use completed months only (2026 Jan–Sep ≈ 0.94x; the full-year-filtered measure shows 0.95x).
 

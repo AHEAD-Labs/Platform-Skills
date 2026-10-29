@@ -31,7 +31,7 @@ Always read the measure's description for its date basis before comparing two me
 
 ### Booked (bookings) — Operations vs Core
 
-- `Booked Revenue ACV` = `FCT_OPPTYLINE_SPLIT[REVENUE_ACV]` at `PROBABILITY = 100` with `IS_BOOKING = TRUE`, by close date. **It ties exactly to Core's `Booked Revenue ACV`** (2026 YTD $5,668,480,766 in both as of 2026-10-09).
+- `Booked Revenue ACV` = `FCT_OPPTYLINE_SPLIT[REVENUE_ACV]` on won opportunities (`DIM_OPPORTUNITY[IS_WON] = TRUE`) with `IS_BOOKING = TRUE`, by close date. **It ties exactly to Core's `Booked Revenue ACV`** (2026 YTD $5,668,480,766 in both as of 2026-10-09).
 - Operations' `Booked Margin ACV` is **gross margin ACV** (2026 YTD ≈ $915.8M). Core's booked margin is **commissionable** margin (≈ $905.1M). They differ by design; label which one an answer uses. Percent version: `Booked Margin ACV %`; prior year: `Booked Margin ACV SPLY` (needs a DIM_DATE filter).
 - **Route plain booked-sales questions to Core.** Use Operations for booked sales only when the question compares booked to orders/shipments, or is about quotes, orders, fulfillment, international ship-to, or deal registrations.
 - Filtering by territory credits each split recipient (split-adjusted). Region/geo: `DIM_TERRITORY[REGION]` / `[GEO]` joined via `TERRITORY_ID` — the path for every fact in this model.

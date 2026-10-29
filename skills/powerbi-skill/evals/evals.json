@@ -43,7 +43,7 @@
           "results": {
             "Claude": {
               "passed": true,
-              "evidence": "Re-verified 2026-09-23 against production Core after the AI Models Development promotion. Resolved to Core internally (no model ID asked). 'New York geo' correctly filtered via DIM_REP[TERRITORY_GEO] (joined on TERRITORY_ID) rather than FCT_OPPTYLINE_SPLIT[GEO] directly, with the two paths confirmed to diverge as expected. A schema pull preceded the DAX query. Composed answer led with the figure, stated the fiscal period / model / geo filter / actuals-vs-plan status, and used no DAX/table/measure names.",
+              "evidence": "Re-verified 2026-09-23 against production Core after the AI Models Development promotion. Resolved to Core internally (no model ID asked). 'New York geo' correctly filtered via DIM_REP[TERRITORY_GEO] (joined on TERRITORY_ID) rather than DIM_OPPORTUNITY[GEO] (the opportunity's own geo), with the two paths confirmed to diverge as expected. A schema pull preceded the DAX query. Composed answer led with the figure, stated the fiscal period / model / geo filter / actuals-vs-plan status, and used no DAX/table/measure names.",
               "run_by": "Trevor Kane (owner attestation)",
               "run_date": "2026-09-23"
             },
@@ -64,7 +64,7 @@
           "results": {
             "Claude": {
               "passed": true,
-              "evidence": "Re-verified 2026-09-23 against production Core after the AI Models Development promotion. Resolved to Core internally (no model ID asked). 'New York geo' correctly filtered via DIM_REP[TERRITORY_GEO] (joined on TERRITORY_ID) rather than FCT_OPPTYLINE_SPLIT[GEO] directly, with the two paths confirmed to diverge as expected. A schema pull preceded the DAX query. Composed answer led with the figure, stated the fiscal period / model / geo filter / actuals-vs-plan status, and used no DAX/table/measure names.",
+              "evidence": "Re-verified 2026-09-23 against production Core after the AI Models Development promotion. Resolved to Core internally (no model ID asked). 'New York geo' correctly filtered via DIM_REP[TERRITORY_GEO] (joined on TERRITORY_ID) rather than DIM_OPPORTUNITY[GEO] (the opportunity's own geo), with the two paths confirmed to diverge as expected. A schema pull preceded the DAX query. Composed answer led with the figure, stated the fiscal period / model / geo filter / actuals-vs-plan status, and used no DAX/table/measure names.",
               "run_by": "Trevor Kane (owner attestation)",
               "run_date": "2026-09-23"
             },
@@ -85,7 +85,7 @@
           "results": {
             "Claude": {
               "passed": true,
-              "evidence": "Re-verified 2026-09-23 against production Core after the AI Models Development promotion. Resolved to Core internally (no model ID asked). 'New York geo' correctly filtered via DIM_REP[TERRITORY_GEO] (joined on TERRITORY_ID) rather than FCT_OPPTYLINE_SPLIT[GEO] directly, with the two paths confirmed to diverge as expected. A schema pull preceded the DAX query. Composed answer led with the figure, stated the fiscal period / model / geo filter / actuals-vs-plan status, and used no DAX/table/measure names.",
+              "evidence": "Re-verified 2026-09-23 against production Core after the AI Models Development promotion. Resolved to Core internally (no model ID asked). 'New York geo' correctly filtered via DIM_REP[TERRITORY_GEO] (joined on TERRITORY_ID) rather than DIM_OPPORTUNITY[GEO] (the opportunity's own geo), with the two paths confirmed to diverge as expected. A schema pull preceded the DAX query. Composed answer led with the figure, stated the fiscal period / model / geo filter / actuals-vs-plan status, and used no DAX/table/measure names.",
               "run_by": "Trevor Kane (owner attestation)",
               "run_date": "2026-09-23"
             },
@@ -106,7 +106,7 @@
           "results": {
             "Claude": {
               "passed": true,
-              "evidence": "Re-verified 2026-09-23 against production Core after the AI Models Development promotion. Resolved to Core internally (no model ID asked). 'New York geo' correctly filtered via DIM_REP[TERRITORY_GEO] (joined on TERRITORY_ID) rather than FCT_OPPTYLINE_SPLIT[GEO] directly, with the two paths confirmed to diverge as expected. A schema pull preceded the DAX query. Composed answer led with the figure, stated the fiscal period / model / geo filter / actuals-vs-plan status, and used no DAX/table/measure names.",
+              "evidence": "Re-verified 2026-09-23 against production Core after the AI Models Development promotion. Resolved to Core internally (no model ID asked). 'New York geo' correctly filtered via DIM_REP[TERRITORY_GEO] (joined on TERRITORY_ID) rather than DIM_OPPORTUNITY[GEO] (the opportunity's own geo), with the two paths confirmed to diverge as expected. A schema pull preceded the DAX query. Composed answer led with the figure, stated the fiscal period / model / geo filter / actuals-vs-plan status, and used no DAX/table/measure names.",
               "run_by": "Trevor Kane (owner attestation)",
               "run_date": "2026-09-23"
             },
@@ -127,7 +127,7 @@
           "results": {
             "Claude": {
               "passed": true,
-              "evidence": "Re-verified 2026-09-23 against production Core after the AI Models Development promotion. Resolved to Core internally (no model ID asked). 'New York geo' correctly filtered via DIM_REP[TERRITORY_GEO] (joined on TERRITORY_ID) rather than FCT_OPPTYLINE_SPLIT[GEO] directly, with the two paths confirmed to diverge as expected. A schema pull preceded the DAX query. Composed answer led with the figure, stated the fiscal period / model / geo filter / actuals-vs-plan status, and used no DAX/table/measure names.",
+              "evidence": "Re-verified 2026-09-23 against production Core after the AI Models Development promotion. Resolved to Core internally (no model ID asked). 'New York geo' correctly filtered via DIM_REP[TERRITORY_GEO] (joined on TERRITORY_ID) rather than DIM_OPPORTUNITY[GEO] (the opportunity's own geo), with the two paths confirmed to diverge as expected. A schema pull preceded the DAX query. Composed answer led with the figure, stated the fiscal period / model / geo filter / actuals-vs-plan status, and used no DAX/table/measure names.",
               "run_by": "Trevor Kane (owner attestation)",
               "run_date": "2026-09-23"
             },
