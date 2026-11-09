@@ -4,6 +4,8 @@
 
 Platform-Skills is the proposed maintained source for Skills that earn AHEAD Platform Skill status, with their version history. The current pilot is **Glean-first**; Claude distribution is stage two.
 
+**Picking this up?** Start at [docs/PICKUP.md](docs/PICKUP.md): orientation, state snapshot, gap audit and prioritized deliverables.
+
 Status labels used below: **CONFIRMED** (demonstrated), **TESTING** (in progress), **OPEN** (unresolved or unproven), **BLOCKED** (cannot proceed until something else is resolved).
 
 ## What this is, and what it is not
@@ -16,7 +18,7 @@ Platform-Skills **is**:
 
 Platform-Skills **is not**:
 
-- the audit workflow. That is [Skills Auditor](#relationship-to-skills-auditor), a separate repository (formerly Skills Marketplace).
+- the audit engine. That is [Skills Auditor](#relationship-to-skills-auditor), a separate internal repository (formerly Skills Marketplace). Candidates are *submitted* here by pull request, and CI blocks them until a trusted Auditor result exists.
 - a broad, company-wide intake channel
 - a proven automated publishing path. GitHub-to-Glean sync is still being validated (see [Validation matrix](#validation-matrix)).
 - a place for credentials, runtime infrastructure, or operational state
@@ -41,8 +43,9 @@ Platform-Skills **is not**:
 
 ```mermaid
 flowchart TD
-    A["Candidate / updated skill"] --> B["Skills Auditor<br/>Full or delta audit"]
-    B -->|Human approval| C["Platform-Skills<br/>Approved source"]
+    A["Candidate / updated Skill ZIP<br/>(PR to Platform-Skills)"] --> V["Deterministic gate<br/>tools/skillpkg.py"]
+    V --> B["Skills Auditor<br/>Full or delta audit"]
+    B -->|Independent human review + merge| C["Platform-Skills main<br/>Approved source"]
     C -->|publish / sync<br/>pilot validating| D["Glean"]
     C -.->|stage two| E["Claude"]
 ```
@@ -73,7 +76,10 @@ CI (`validate-skills`) runs unit tests and a policy gate on every PR, with a rea
 | Nested Skill reference files were discovered successfully | CONFIRMED |
 | Private-repository import failure. Strongly suggests an authorization issue; root cause not proven | OPEN |
 | Scheduled GitHub sync. Prior result is inconclusive, not a failure of the architecture | OPEN |
-| ZIP-from-GitHub synchronization support. Not tested or vendor-confirmed | OPEN |
+| GitHub import is one-way (GitHub → Glean) and accepts Skill folder / `SKILL.md` paths (2026-10-13) | CONFIRMED |
+| Importing a ZIP file URL from GitHub failed with a directory parsing error (2026-10-13) | CONFIRMED (fails) |
+| Existing manual org Skills do not become Git-backed automatically; a controlled migration/deactivation is needed | CONFIRMED |
+| Refresh cadence, tenant behavior, vendor roadmap | OPEN |
 
 ### Why the previous sync experiment is inconclusive
 
@@ -89,7 +95,7 @@ A clean GitHub-only-writer test is still required.
 | Area | Status | Notes |
 | --- | --- | --- |
 | Existing Shared Skill vs newly uploaded package: coexistence / deduplication | TESTING | Using the six baseline exports |
-| Canonical Git representation: ZIP vs expanded Skill directory | OPEN | Align with Grace, confirm with Glean |
+| Canonical Git representation: ZIP vs expanded Skill directory | IMPLEMENTED, NOT CONFIRMED IN GLEAN | ZIP is canonical; `tools/skillpkg.py` generates `projections/glean/<id>/`. Needs a first folder import from `main` (PICKUP D6) |
 | GitHub update propagation | OPEN | |
 | Refresh / scheduled-sync behavior | OPEN | Needs the clean test below |
 | Private-repository authorization | OPEN | Hypothesis only; not proven |
@@ -97,24 +103,28 @@ A clean GitHub-only-writer test is still required.
 
 ## Next execution sequence
 
-1. Capture the six existing org-wide Skill exports. *(Staged in `skills/shared/`.)*
-2. Test how Glean handles imported/uploaded copies alongside existing Shared Skills.
-3. Align package representation with Grace.
-4. Merge the approved pilot representation to `main`.
-5. Select one real Skill for a clean GitHub-backed synchronization test. **GitHub is the sole writer** during that test: no edits in Glean.
-6. Take unresolved product/platform questions to Glean.
+See [docs/PICKUP.md §4](docs/PICKUP.md#4-deliverables-to-pick-up-priority-order) for the maintained, owner-assigned list. In short:
+
+1. Independent review of the merged tooling and branch protection on `main` (#7).
+2. Decide the interim audit path while the Auditor is not in CI.
+3. Decide whether the six seed exports land on `main` as unapproved baselines (draft #5).
+4. Take one real Skill end to end: audit to REVIEW_READY, project, merge.
+5. Run a clean folder import from `main` with **GitHub as the sole writer** (no edits in Glean), then record what was observed.
+6. Take the unresolved product/platform questions to Glean.
 
 ## What belongs here
 
-- Approved Skill packages, under [`skills/`](skills/README.md)
+- Skill packages (ZIPs) under [`skills/`](skills/README.md): approved ones, and candidates on open PRs
+- Generated Glean folders and provenance for approved Skills (`projections/glean/`, `provenance/`)
 - Short pointers to the Skill standard, under [`standards/`](standards/README.md)
 - Contribution and review guidance ([CONTRIBUTING.md](CONTRIBUTING.md))
 
 ## What does not belong here
 
 - Credentials, API keys, tokens, or other secrets
-- Unapproved or experimental candidate Skills (they go through Skills Auditor first)
-- Skills Auditor evaluation logic, AI judging, or audit state
+- Unapproved Skills on `main`, except seed exports explicitly listed in a trusted `skills/baseline-hashes.json`
+- Skills Auditor reports or findings (they stay in the internal Auditor repository)
+- Skills Auditor evaluation logic or AI judging
 - Deployment, sync, or notification infrastructure
 - Client data or other confidential material
 
@@ -139,7 +149,7 @@ The first population of this repository is the set of Skills launched through th
 
 These were launched in Glean and were also announced as available to users with Claude access.
 
-The six Glean org-wide export ZIPs are now staged under `skills/shared/` as baseline artifacts. Staging them does **not** mean they are approved Platform Skills or that anything has been published.
+The six Glean org-wide export ZIPs are staged on draft PR #5 as unapproved baseline artifacts; they are not on `main` yet. Staging them does **not** mean they are approved Platform Skills or that anything has been published.
 
 - Each landed Skill should preserve its version history and provenance.
 - Once an artifact is reviewed and merged, `main` is the approved source for that Skill.
@@ -164,7 +174,8 @@ flowchart TD
 Git is the version history. Each approved change is a merged pull request, so the diff, the reviewer, and the reasoning stay attached to the change. To see what changed in a Skill, read its history:
 
 ```sh
-git log --follow -- skills/<platform>/<skill-name>
+git log --follow -- skills/shared/<skill-id>.zip     # the source package
+git log -- provenance/<skill-id>.json                # approvals, audit summary, Glean state
 ```
 
 ## Why human review is the approval gate
