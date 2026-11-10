@@ -129,7 +129,7 @@ def collect(skills_dir, root=None):
             warnings.append(f"skipped {entry.name}: SKILL.md is a symlink")
             continue
         fm = parse_frontmatter(_read_head(skill_md))
-        row = {"id": entry.name, "source path": skill_md.relative_to(root).as_posix()}
+        row = {"id": entry.name, "source path": entry.relative_to(root).as_posix() + "/"}
         for column, key in FRONTMATTER_KEYS.items():
             row[column] = _clean(fm.get(key, ""))
         rows.append(row)

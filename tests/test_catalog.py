@@ -113,7 +113,7 @@ class TestCollect(Fixture):
             "id": "fixture-alpha", "name": "fixture-alpha", "description": "Does alpha things.",
             "version": "1.2.0", "owner": "Alpha Owner", "team": "Team A", "platforms": "Claude, Glean",
             "publication-status": "Approved", "audience": "All AHEAD staff",
-            "source path": "skills/fixture-alpha/SKILL.md",
+            "source path": "skills/fixture-alpha/",
             "glean-link": "https://glean.example/alpha", "claude-link": "https://claude.example/alpha"}])
 
     def test_links_are_blank_when_absent_never_invented(self):
@@ -140,7 +140,7 @@ class TestCollect(Fixture):
         self.make_skill("fixture-bare", "# no frontmatter at all\n")
         (row,), _ = self.collect()
         self.assertEqual(row["id"], "fixture-bare")
-        self.assertEqual(row["source path"], "skills/fixture-bare/SKILL.md")
+        self.assertEqual(row["source path"], "skills/fixture-bare/")
         self.assertEqual([c for c in catalog.COLUMNS if row[c] == ""],
                          [c for c in catalog.COLUMNS if c not in ("id", "source path")])
 
@@ -180,7 +180,7 @@ class TestCollect(Fixture):
 
 def sample_row(**over):
     row = {c: "" for c in catalog.COLUMNS}
-    row.update({"id": "fixture-alpha", "name": "fixture-alpha", "source path": "skills/fixture-alpha/SKILL.md"})
+    row.update({"id": "fixture-alpha", "name": "fixture-alpha", "source path": "skills/fixture-alpha/"})
     row.update(over)
     return row
 
