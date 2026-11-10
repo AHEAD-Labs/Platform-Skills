@@ -1,0 +1,72 @@
+{
+  "_doc": "Cross-practice adjacency groups. 'trigger' is a regex tested on the lowercased work-item query (or on the top candidates' P_Name/SKU). 'members' is a regex tested on P_Name + SKU + Item_Name (+ Description when 'member_fields' includes it). Every matching active row, in any practice, is listed under 'Also consider'. Add a group here when a topic is sold or scoped by more than one practice.",
+  "groups": [
+    {
+      "id": "purview_m365_data_security",
+      "label": "Microsoft Purview / M365 data security (Security + Modern Workspace)",
+      "trigger": "purview|insider risk|sensitivity label|information protection|m365 (security|data)|microsoft 365 (security|configuration)|e5 (security|posture)|copilot data",
+      "members": "purview|insider risk|sensitivity label|M365 (Data|E5|Security)|Microsoft 365 Configuration|Copilot Data Security|DSPM - Microsoft|Intune \\+ Entra \\+ Defender|Third-Party GenAI Data Security",
+      "member_fields": [
+        "P_Name",
+        "SKU",
+        "Item_Name",
+        "Description"
+      ]
+    },
+    {
+      "id": "data_security_dlp_dspm",
+      "label": "Data security: DLP / DSPM, any vendor (Security + Network Security)",
+      "trigger": "\\bdlp\\b|data loss|dspm|data security posture|data classification",
+      "members": "\\bDLP\\b|DSPM|Data Loss|Purview|Data Map|GenAI Data Security",
+      "member_fields": [
+        "P_Name",
+        "SKU",
+        "Item_Name"
+      ]
+    },
+    {
+      "id": "cyber_recovery",
+      "label": "Cyber Recovery / CRR (Data Center, Security, Network, AI & Cloud)",
+      "trigger": "cyber recover|\\bcrr\\b|isolated recovery|clean ?room|\\bire\\b|cyber resilien|ransomware|air-?gap|recovery vault|immutable",
+      "members": "\\bCRR\\b|cyber recovery|cyber resilien|isolated recovery|clean ?room|cleanroom|\\bIRE\\b|ransomware",
+      "member_fields": [
+        "P_Name",
+        "SKU",
+        "Item_Name"
+      ]
+    },
+    {
+      "id": "microsoft_endpoint_identity",
+      "label": "Microsoft endpoint / identity / Defender (Modern Workspace + Security)",
+      "trigger": "intune|autopilot|defender|entra|endpoint management|conditional access|device compliance",
+      "members": "intune|defender|entra|autopilot|endpoint management|device compliance|SCuBA",
+      "member_fields": [
+        "P_Name",
+        "SKU",
+        "Item_Name"
+      ]
+    },
+    {
+      "id": "ai_governance_copilot",
+      "label": "AI readiness / governance / Copilot / agentic (AI & Cloud, AI Native, Consulting, Security, Modern Workspace, ESM)",
+      "trigger": "copilot|ai governance|ai readiness|agentic|ai strateg|ai sdlc|secure ai",
+      "members": "copilot|AI Readiness|AI Governance|Agentic|AI Strategy|AI SDLC|Secure AI|Data Readiness for AI",
+      "member_fields": [
+        "P_Name",
+        "SKU",
+        "Item_Name"
+      ]
+    },
+    {
+      "id": "vmware_vcf_broadcom",
+      "label": "VMware / VCF / Broadcom (Data Center, AI & Cloud, Security, Financial Consulting)",
+      "trigger": "vmware|\\bvcf\\b|vsphere|broadcom|vxrail|esxi|horizon",
+      "members": "VMware|\\bVCF\\b|vSphere|Broadcom|VKS|vDefend|Omnissa|Horizon",
+      "member_fields": [
+        "P_Name",
+        "SKU",
+        "Item_Name"
+      ]
+    }
+  ]
+}

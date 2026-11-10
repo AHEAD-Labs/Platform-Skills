@@ -1,0 +1,205 @@
+{
+ "preset": "blank",
+ "template": {
+  "name": "base",
+  "version": "1.0",
+  "status": "general",
+  "source": "General frame for any phase, built from the SOW."
+ },
+ "client": "Client",
+ "engagement": "Engagement",
+ "phase": "Assessment",
+ "next_phase": "the next phase",
+ "date": "Package date",
+ "package": "{phase} Deliverable Package",
+ "owners": {},
+ "tabs": [
+  {
+   "key": "overview",
+   "label": "Overview",
+   "index": false,
+   "owner": "Principal Consultant",
+   "cover": {
+    "eyebrow": "{package} · {date}",
+    "title": "{client} {engagement}: {phase}",
+    "lede": "One sentence on what this package gives {client}.",
+    "stats": {
+     "key": "overview-cover-stats",
+     "items": [
+      {
+       "label": "Headline number one",
+       "sub": "What it counts"
+      },
+      {
+       "label": "Headline number two",
+       "sub": "What it counts"
+      },
+      {
+       "label": "Headline number three",
+       "sub": "What it counts"
+      }
+     ]
+    }
+   },
+   "sections": [
+    {
+     "id": "summary",
+     "eyebrow": "{phase}",
+     "title": "Executive summary",
+     "blocks": [
+      {
+       "type": "lead",
+       "eyebrow": "Overall conclusion",
+       "key": "overview-conclusion-text",
+       "guide": "The overarching conclusion in two or three sentences."
+      },
+      {
+       "type": "cards",
+       "cols": 2,
+       "items": [
+        {
+         "title": "Our approach",
+         "key": "overview-approach",
+         "guide": "How the work was done and who from {client} was involved."
+        },
+        {
+         "title": "Key insights",
+         "key": "overview-insights",
+         "guide": "The three to five insights that matter most."
+        },
+        {
+         "title": "Current position",
+         "key": "overview-position",
+         "guide": "What is agreed, what is recommended and what remains open."
+        },
+        {
+         "title": "Recommended next steps",
+         "key": "overview-next",
+         "guide": "What {client} should do next, presented as a recommendation."
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "id": "index",
+     "eyebrow": "{package}",
+     "title": "Deliverable index",
+     "blocks": [
+      {
+       "type": "index"
+      }
+     ]
+    },
+    {
+     "id": "glossary",
+     "eyebrow": "Reference",
+     "title": "Glossary",
+     "blocks": [
+      {
+       "type": "glossary",
+       "key": "overview-glossary-terms",
+       "owner": "Engagement Lead"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "key": "deliverable-one",
+   "label": "First Deliverable Name",
+   "deliverable": {
+    "id": "D1",
+    "title": "First Deliverable Name",
+    "owner": "Deliverable Lead",
+    "question": "The question this deliverable answers for {client}.",
+    "sections": [
+     [
+      "section-a",
+      "First section title",
+      "What this section must contain."
+     ],
+     {
+      "key": "section-b",
+      "title": "A table section",
+      "guide": "Add one row per entry.",
+      "columns": [
+       "ID",
+       "Item",
+       "Owner",
+       "Next step"
+      ]
+     },
+     {
+      "key": "section-c",
+      "title": "A diagram section",
+      "kind": "diagram",
+      "guide": "The diagram, with a caption."
+     }
+    ],
+    "criteria": [
+     [
+      "First acceptance criterion from the SOW",
+      [
+       "section-a"
+      ]
+     ],
+     [
+      "Second acceptance criterion from the SOW",
+      [
+       "section-b",
+       "section-c"
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "key": "free-form",
+   "label": "Free-Form Tab",
+   "title": "Free-Form Tab",
+   "owner": "Deliverable Lead",
+   "question": "A tab built from explicit sections and blocks, for content that is not a contracted deliverable.",
+   "hero": {
+    "eyebrow": "Eyebrow",
+    "title": "Free-form tab",
+    "lede": "Use explicit sections when a tab is not a single deliverable."
+   },
+   "sections": [
+    {
+     "id": "scores",
+     "title": "Scorecard",
+     "blocks": [
+      {
+       "type": "heatmap",
+       "key": "free-form-scores-grid",
+       "rows": [],
+       "columns": [],
+       "scale": {
+        "min": 1,
+        "max": 5,
+        "labels": {
+         "1": "Low",
+         "3": "Medium",
+         "5": "High"
+        }
+       },
+       "guide": "Scores per row and column, generated from the config."
+      }
+     ]
+    },
+    {
+     "id": "findings",
+     "title": "Findings",
+     "blocks": [
+      {
+       "type": "slot",
+       "key": "free-form-findings-text",
+       "guide": "The findings, conclusion first."
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

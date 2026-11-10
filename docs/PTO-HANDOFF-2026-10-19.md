@@ -1,5 +1,7 @@
 # PTO handoff (Akbar, out 2026-10-19 to 10-31)
 
+> **Historical.** This is a point-in-time handoff note from 2026-10-19. It is not maintained and does not describe how the repository works today: it assumes ZIP packages, `projections/` and `provenance/`, and Skills Auditor approval, none of which are the current model. For current guidance, see [CONTRIBUTING.md](../CONTRIBUTING.md) and [GOVERNANCE.md](GOVERNANCE.md).
+
 Platform-Skills is intentionally **public**. Anything committed here must be suitable for public view.
 
 ## State at handoff

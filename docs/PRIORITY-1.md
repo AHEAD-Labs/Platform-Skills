@@ -1,3 +1,5 @@
+> **Note (2026-11-10):** Section 1 reviews commit `1f793b0` (#4), which added the ZIP package gate and projection tooling. `main` has since moved to skill folders under `skills/<id>/` and reworked the checking tool. Section 1 is kept as the record of the retroactive review of #4. Sections 2 and 3 (ruleset and CODEOWNERS) still apply.
+
 # Priority 1: ratify #4 and protect `main`
 
 **Who:** Joe or Grace. **Not** Akbar, the author of #4. (Meredith is an admin for visibility only, not a reviewer.)

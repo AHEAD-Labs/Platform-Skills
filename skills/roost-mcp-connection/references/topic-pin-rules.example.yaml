@@ -1,0 +1,16 @@
+# Approved topic-to-page pin rules (example schema)
+# Replace the placeholder values only after the Roost owner approves them.
+rules:
+  - rule_id: replace-me
+    topic_patterns:
+      - "[NEEDS INPUT: approved search phrase]"
+    roost_pages:
+      - url: "[NEEDS INPUT: approved Roost URL]"
+        item_id: "[NEEDS INPUT: Roost item ID]"
+    placement: response_top
+    freshness:
+      max_age_days: "[NEEDS INPUT]"
+      timestamp_field: "[NEEDS INPUT]"
+    owner: "[NEEDS INPUT]"
+    review_date: "[NEEDS INPUT: YYYY-MM-DD]"
+    approval_state: "draft"
