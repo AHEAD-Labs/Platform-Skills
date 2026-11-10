@@ -6,11 +6,22 @@ For code owners and maintainers. Contributors should start with [CONTRIBUTING.md
 
 Pull request → automated checks → review by a human code owner who is not the author → merge into `main`. Skills Auditor is paused and its result is not part of this flow.
 
+## Running the checks locally
+
+From the repository root, with Python 3, on the branch under review:
+
+```sh
+python3 -I -B tools/skillpkg.py ci --root .
+```
+
+It exits 1 if any `ERROR` is printed and 0 otherwise. Warnings never fail it. The README lists every message under [If a check fails](../README.md#if-a-check-fails). The warning that a skill's `version` was not increased only appears on the pull request check, because it compares with `main`; check the version bump by eye when you review.
+
 ## Reviewing a pull request
 
 Read the whole diff of the skill folder, including reference and data files, not only `SKILL.md`.
 
 - `skills/<id>/SKILL.md` exists, `<id>` is lowercase letters, digits and hyphens, and `name` equals `<id>`.
+- `owner` is a team name or GitHub handle, not contact details.
 - For an update, `version` is bumped.
 - The origin in the pull request template is filled in.
 - Nothing in the folder is a credential, token, API key or client data, and the content is appropriate for a **public** repository.

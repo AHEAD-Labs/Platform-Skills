@@ -13,7 +13,7 @@ Every skill's `SKILL.md` starts with YAML frontmatter.
 | `name` | **Yes** | The skill's id. Equals the folder name `skills/<id>/`. |
 | `description` | **Yes** | What the skill does and when to use it. |
 | `version` | Recommended | Bump it on every update. |
-| `owner` | Recommended | The person responsible for the skill. For an assisted submission, the contributor. |
+| `owner` | Recommended | Who is responsible for the skill: a team name or GitHub handle. For an assisted submission, the contributor. |
 | `team` | Recommended | The owning team. |
 | `ahead-platform` | Recommended | The platform or platforms the skill is for, for example Claude, Glean or both. |
 | `audience` | Recommended | Who the skill is for. |
