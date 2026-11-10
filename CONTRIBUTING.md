@@ -29,7 +29,7 @@ git log -- skills/<id>/
 
 ## Without a GitHub account (assisted)
 
-1. Send the skill folder, or the Glean export, to a Platform-Skills maintainer.
+1. Send the skill folder, or the Glean export, to a Platform-Skills maintainer through your team's internal chat.
 2. The maintainer places it in `skills/<id>/`, sets you as `owner` in the frontmatter, and opens the pull request with the origin **assisted**.
 3. You stay the owner of the skill. The maintainer is only the author of the pull request, so a different code owner must review and approve it.
 

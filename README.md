@@ -1,35 +1,34 @@
 # Platform-Skills: the reviewed, shared home for AHEAD skills
 
-Platform-Skills holds AHEAD-managed skills as plain folders in git, so every skill has one source, an owner, a reviewer and a version history. A skill is a folder of instructions (plus any files it needs) that teaches an AI assistant, such as Claude or Glean, how to do one job well.
+Platform-Skills holds AHEAD-managed **skills** as plain folders in git. A skill is a folder of instructions (plus any files it needs) that teaches an AI assistant, such as Claude or Glean, how to do one job well. Each skill here has an owner, a reviewer and a version history.
 
-This is a **public** repository. Commit only what you would be comfortable putting on a public web page.
+- **Belongs here:** skill folders, and guidance on writing and reviewing them.
+- **Does not belong here:** credentials, tokens, client data, or anything you would not put on a public web page. This repository is public.
 
 ## Add or update a skill in 3 steps
 
-1. **Put your skill in a folder.** Create `skills/<id>/` with a `SKILL.md` at its root. `<id>` uses lowercase letters, digits and hyphens, and must equal `name` in the frontmatter.
+1. **Make a folder** `skills/<id>/` with a `SKILL.md` at the top of it. `<id>` uses lowercase letters, digits and hyphens, and matches `name` inside the file. To update a skill, edit its folder and bump `version`.
+2. **Open a pull request** into `main` and fill in the template.
+3. **A reviewer who isn't you approves it.** The rule: every merge needs approval from a human code owner other than the author. Then it merges.
 
-   ```markdown
-   ---
-   name: my-skill-id
-   description: One or two sentences on what the skill does and when to use it.
-   version: 1.0.0
-   owner: <your work email>
-   ---
-   ```
+**If a check fails,** the message says what to fix. Fix it, push again, and the checks re-run.
 
-   `name` and `description` are required. `version`, `owner`, `team`, `ahead-platform`, `audience`, `publication-status`, `glean-link` and `claude-link` are recommended; leaving one out is a warning, not a failure.
-2. **Open a pull request** into `main`. The [pull request template](.github/pull_request_template.md) asks where the skill came from (its *origin*): GitHub, a Glean export, or assisted.
-3. **Fix what the checks flag, then get a review.** Checks run automatically on every pull request. A human code owner other than the author must approve before anything merges.
+**No GitHub account?** Send the folder to a Platform-Skills maintainer through your team's internal chat. The maintainer opens the pull request for you, and you stay the skill's `owner`. ([Details](#no-github-account))
 
-**To update a skill,** do the same three steps: edit the files in its folder, bump `version`, and open a pull request. Git history is the version history:
+Not sure what a skill folder looks like? See [Skill folder at a glance](#skill-folder-at-a-glance).
 
-```sh
-git log -- skills/<id>/
+## Skill folder at a glance
+
+```markdown
+---
+name: my-skill-id
+description: One or two sentences on what the skill does and when to use it.
+version: 1.0.0
+owner: your-github-handle
+---
 ```
 
-Which platform a skill is for (Claude, Glean, or both) is the `ahead-platform` frontmatter field. It is never a folder: every skill sits directly under `skills/`.
-
-More detail, including the Glean export and no-GitHub paths, is in [CONTRIBUTING.md](CONTRIBUTING.md).
+`name` and `description` are required. `version`, `owner`, `team`, `ahead-platform`, `audience`, `publication-status`, `glean-link` and `claude-link` are recommended; leaving one out is a warning, not a failure.
 
 ## Starting from a Glean export
 
@@ -37,11 +36,11 @@ Unzip the export into `skills/<id>/` so that `SKILL.md` is at the root of that f
 
 ## No GitHub account?
 
-Send the skill folder (or the Glean export) to a Platform-Skills maintainer. The maintainer places it in `skills/<id>/`, sets you as `owner` in the frontmatter, and opens the pull request with the origin **assisted**. You remain the owner of the skill. Because the maintainer authors that pull request, a different code owner must review and approve it.
+Send the skill folder (or the Glean export) to a Platform-Skills maintainer through your team's internal chat. The maintainer places it in `skills/<id>/`, sets you as `owner` in the frontmatter, and opens the pull request with the origin **assisted**. You remain the owner of the skill. Because the maintainer authors that pull request, a different code owner must review and approve it.
 
 ## Who reviews
 
-Every merge into `main` needs approval from a **human code owner who is not the author of the change**. Code owners are defined in [`.github/CODEOWNERS`](.github/CODEOWNERS). Automated checks help the reviewer; they do not approve anything, and having admin access is not approval either. The repository settings that enforce this are described in [docs/GOVERNANCE.md](docs/GOVERNANCE.md).
+The rule: every merge into `main` needs approval from a **human code owner who is not the author of the change**. Code owners are defined in [`.github/CODEOWNERS`](.github/CODEOWNERS). Automated checks help the reviewer; they do not approve anything, and having admin access is not approval either. The repository settings that enforce this rule are described in [docs/GOVERNANCE.md](docs/GOVERNANCE.md).
 
 ## What the automated checks do
 
