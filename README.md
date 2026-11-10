@@ -62,7 +62,7 @@ Only `name` and `description` are required.
 
 ## Starting from a Glean export
 
-1. Unzip the export into `skills/<id>/`, so that `SKILL.md` is at the root of that folder and not inside a wrapper folder.
+1. Unzip the export into `skills/<id>/`, so that `SKILL.md` is at the root of that folder and not inside a wrapper folder. If unzipping made an extra folder (`skills/<id>/<id>/SKILL.md`), move its contents up one level.
 2. Make sure `name` in `SKILL.md` matches the folder name.
 3. Open the pull request and choose **Glean export** as the origin. It gets the same checks and review as any other change.
 
@@ -103,6 +103,7 @@ FAIL: 1 error, 1 warning. Each problem above says how to fix it.
 
 - An **ERROR** fails the check. Fix it, commit, and push again; the checks re-run on the pull request.
 - A **WARNING** does not fail the check. Fix it when you can.
+- The report also lists warnings for skills that are already in the repository, so a good new skill can still print several. Errors come first, and the line that starts `CI OK` or `FAIL` is the result. Look for lines that name your own folder, `skills/<id>/`.
 - On a pull request the same messages appear in the check's log and summary. The warning that a skill's version was not increased appears only there, because it compares your skill with what is on `main`; the local command above cannot show it.
 
 <details>

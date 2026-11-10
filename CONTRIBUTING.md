@@ -29,11 +29,11 @@ From the repository root, with Python 3:
 python3 -I -B tools/skillpkg.py ci --root .
 ```
 
-An `ERROR` fails the check; fix it and run the command again. A `WARNING` does not fail it. What each message means, and how to fix it, is in the README under [If a check fails](README.md#if-a-check-fails).
+An `ERROR` fails the check; fix it and run the command again. A `WARNING` does not fail it. The report also lists warnings for skills already in the repository, so look for lines that name your own folder, `skills/<id>/`; the line that starts `CI OK` or `FAIL` is the result. What each message means, and how to fix it, is in the README under [If a check fails](README.md#if-a-check-fails).
 
 ## Starting from a Glean export
 
-1. Unzip the export into `skills/<id>/`, so that `SKILL.md` sits at the root of that folder and not inside a wrapper folder.
+1. Unzip the export into `skills/<id>/`, so that `SKILL.md` sits at the root of that folder and not inside a wrapper folder. If unzipping made an extra folder (`skills/<id>/<id>/SKILL.md`), move its contents up one level.
 2. Make sure `name` in `SKILL.md` equals the folder name.
 3. Do not commit the ZIP. It is an export format, not the format this repository stores.
 4. Open the pull request as in step 2 above and choose **Glean export** as the origin.
