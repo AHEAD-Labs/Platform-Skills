@@ -1,205 +1,187 @@
-# Platform-Skills
+# Platform-Skills: the reviewed, shared home for AHEAD skills
 
-**Skills Auditor is where we audit. Platform-Skills is where the approved version lives.**
+Platform-Skills holds AHEAD-managed **skills** as plain folders in git. A skill is a folder of instructions (plus any files it needs) that teaches an AI assistant, such as Claude or Glean, how to do one job well. The rule here is that someone other than the author reviews every change, and git keeps each skill's version history.
 
-Platform-Skills is the proposed maintained source for Skills that earn AHEAD Platform Skill status, with their version history. The current pilot is **Glean-first**; Claude distribution is stage two.
+- **Belongs here:** skill folders, and guidance on writing and reviewing them.
+- **Does not belong here:** credentials, tokens, client data, or anything you would not put on a public web page. This repository is public.
 
-Status labels used below: **CONFIRMED** (demonstrated), **TESTING** (in progress), **OPEN** (unresolved or unproven), **BLOCKED** (cannot proceed until something else is resolved).
+## Add or update a skill in 3 steps
 
-## What this is, and what it is not
+1. **Make a folder** `skills/<id>/` with a `SKILL.md` at the top of it. `<id>` uses lowercase letters, digits and hyphens, and matches `name` inside the file. To update a skill, edit its folder and bump `version`.
+2. **Open a pull request** into `main` and fill in the template.
+3. **A reviewer who isn't you approves it.** The rule: every merge needs approval from a human code owner other than the author. Then it merges.
 
-Platform-Skills **is**:
+**If a check fails,** the message says what to fix. Fix it, push again, and the checks re-run. ([More](#if-a-check-fails))
 
-- the proposed single home of each approved Platform Skill, so a Skill is maintained once rather than edited separately on each platform
-- the version history of those Skills: every change is a pull request with a reviewer
-- the pilot workspace for validating how Glean (and later Claude) consume Skills from this repository
+**No GitHub account?** Send the folder to a Platform-Skills maintainer through your team's internal chat. The maintainer opens the pull request for you, and you stay the skill's `owner`. ([Details](#no-github-account))
 
-Platform-Skills **is not**:
+Not sure what a skill folder looks like? See [Skill folder at a glance](#skill-folder-at-a-glance).
 
-- the audit workflow. That is [Skills Auditor](#relationship-to-skills-auditor), a separate repository (formerly Skills Marketplace).
-- a broad, company-wide intake channel
-- a proven automated publishing path. GitHub-to-Glean sync is still being validated (see [Validation matrix](#validation-matrix)).
-- a place for credentials, runtime infrastructure, or operational state
+## Skill folder at a glance
 
-## Operating model
-
-| Role | Owns |
-| --- | --- |
-| Domain teams / aligned FDEs | Skill business logic and ongoing maintenance |
-| Enterprise GPT | Standards, qualification and auditing, promotion rules, shared distribution architecture |
-
-- **New Skill: full audit.**
-- **Update to an existing Platform Skill: delta/regression audit.**
-- **Human approval is required before promotion.** Automated checks support the reviewer; they do not replace them.
-
-## Relationship to Skills Auditor
-
-| Repository | Role |
-| --- | --- |
-| Skills Auditor | Audit of a new or updated Skill before it is promoted |
-| Platform-Skills (this repo) | Maintained source for approved Platform Skills and their version history |
-
-```mermaid
-flowchart TD
-    A["Candidate / updated skill"] --> B["Skills Auditor<br/>Full or delta audit"]
-    B -->|Human approval| C["Platform-Skills<br/>Approved source"]
-    C -->|publish / sync<br/>pilot validating| D["Glean"]
-    C -.->|stage two| E["Claude"]
+```text
+skills/
+└── example-skill/          <- the folder name is the skill's id
+    ├── SKILL.md            <- required, at the top of the folder
+    └── references/         <- optional: any extra files the skill needs
+        └── notes.md
 ```
+
+`SKILL.md` starts with a short block of frontmatter:
+
+```markdown
+---
+# Required
+name: example-skill                  # same as the folder name
+description: One or two sentences on what the skill does and when to use it.
+
+# Recommended (leaving one out is a warning, not a failure)
+version: 1.0.0                       # bump it on every update
+owner: your-github-handle            # a team name or GitHub handle
+team: Your Team
+ahead-platform: [Claude, Glean]      # which platform(s) the skill is for
+audience: Who the skill is for
+publication-status: Draft
+# glean-link:                        # add once the skill is published in Glean
+# claude-link:                       # add once the skill is published in Claude
+---
+
+# Example skill
+
+The instructions the assistant follows go here, in plain Markdown.
+```
+
+Only `name` and `description` are required.
 
 ## Package philosophy
 
-- Users work with portable Skill **packages**, not repository internals. They should not need to hand-edit files in this repo.
-- Glean exports Skills as **ZIP packages**.
-- The six seed ZIP exports are **untouched baseline exports**, staged on the pilot pull request (not yet on `main`; see the [PTO handoff](docs/PTO-HANDOFF-2026-10-19.md)). They must remain byte-for-byte unchanged.
-- **Implemented:** the ZIP stays canonical, and `tools/skillpkg.py` deterministically generates the Glean-readable folder (`projections/glean/<id>/`) plus provenance once a Skill is audited and approved. Glean's acceptance of that folder from `main` is still to be confirmed.
+- **The folder is the format.** A skill is a folder `skills/<id>/` with a `SKILL.md` at its root. That folder is what this repository stores and what reviewers read.
+- **A ZIP is only an export.** Some tools, such as Glean, can export a skill as a ZIP. If you start from one, unzip it into the skill's folder and commit the folder, never the ZIP.
+- **Platform is a frontmatter field.** `ahead-platform` says whether a skill is for Claude, Glean or both. It is never a folder, so every skill sits directly under `skills/`.
+- **Git history is the version history.** Bump `version` on every update; git records each change, who reviewed it and why.
 
-## Pipeline and operations
+## Starting from a Glean export
 
-| Doc | Contents |
-| --- | --- |
-| [docs/OPERATIONS.md](docs/OPERATIONS.md) | Submit, update, audit, approve, project, Glean release, rollback, troubleshooting |
-| [docs/GOVERNANCE.md](docs/GOVERNANCE.md) | Approval authority, trust boundaries, required branch protection |
-| [docs/AUDITOR-CONTRACT.md](docs/AUDITOR-CONTRACT.md) | Skills Auditor interface and integration status (**not yet integrated**) |
-| [docs/PTO-HANDOFF-2026-10-19.md](docs/PTO-HANDOFF-2026-10-19.md) | Current state, open PRs, next actions |
+1. Unzip the export into `skills/<id>/`, so that `SKILL.md` is at the root of that folder and not inside a wrapper folder. If unzipping made an extra folder (`skills/<id>/<id>/SKILL.md`), move its contents up one level.
+2. Make sure `name` in `SKILL.md` matches the folder name.
+3. Open the pull request and choose **Glean export** as the origin. It gets the same checks and review as any other change.
 
-CI (`validate-skills`) runs unit tests and a policy gate on every PR, with a read-only token and no secrets. Any new or changed Skill ZIP is **blocked** until a trusted Skills Auditor result exists. That block is intentional.
+## No GitHub account?
 
-## Glean pilot status
+Send the skill folder (or the Glean export) to a Platform-Skills maintainer through your team's internal chat. The maintainer places it in `skills/<id>/`, sets you as `owner` in the frontmatter (by team name or handle, as for any skill), and opens the pull request with the origin **assisted**. You remain the owner of the skill. Because the maintainer authors that pull request, a different code owner must review and approve it.
 
-| Finding | Status |
-| --- | --- |
-| Direct GitHub Skill import was previously demonstrated | CONFIRMED |
-| Nested Skill reference files were discovered successfully | CONFIRMED |
-| Private-repository import failure. Strongly suggests an authorization issue; root cause not proven | OPEN |
-| Scheduled GitHub sync. Prior result is inconclusive, not a failure of the architecture | OPEN |
-| ZIP-from-GitHub synchronization support. Not tested or vendor-confirmed | OPEN |
+## Who reviews
 
-### Why the previous sync experiment is inconclusive
+The rule: every merge into `main` needs approval from a **human code owner who is not the author of the change**. Code owners are defined in [`.github/CODEOWNERS`](.github/CODEOWNERS). Automated checks help the reviewer; they do not approve anything, and having admin access is not approval either. The repository settings that administrators apply to enforce this rule are described in [docs/GOVERNANCE.md](docs/GOVERNANCE.md).
 
-- It used a throwaway Skill.
-- It ran on an experiment branch, not the intended canonical `main` path.
-- Repository visibility changed during the experiment.
-- The Glean-side Skill was also interacted with and modified.
+## What the automated checks do
 
-A clean GitHub-only-writer test is still required.
+They run on every pull request, and you can run the same check yourself (see below).
 
-## Validation matrix
+- **Across the whole repository** (everything except `.git`): unsafe file and folder names, symbolic links, ZIP files (by name or by content), a `SKILL.md` anywhere other than `skills/<id>/SKILL.md`, and loose files directly in `skills/`.
+- **In each skill folder** (every folder directly under `skills/`): the folder name is a valid id; `SKILL.md` is at the top of the folder with valid frontmatter, and its `name` equals the folder name; only allowed file types; limits on file size, total size and number of files; no two names that differ only in upper/lower case.
+- **Warnings** never fail the check: missing recommended frontmatter fields, an `owner` that is an email address, and, on pull requests only, a changed skill whose `version` did not change.
 
-| Area | Status | Notes |
-| --- | --- | --- |
-| Existing Shared Skill vs newly uploaded package: coexistence / deduplication | TESTING | Using the six baseline exports |
-| Canonical Git representation: ZIP vs expanded Skill directory | OPEN | Align with Grace, confirm with Glean |
-| GitHub update propagation | OPEN | |
-| Refresh / scheduled-sync behavior | OPEN | Needs the clean test below |
-| Private-repository authorization | OPEN | Hypothesis only; not proven |
-| Organization-wide publication / migration behavior | OPEN | |
+## If a check fails
 
-## Next execution sequence
-
-1. Capture the six existing org-wide Skill exports. *(Staged in `skills/shared/`.)*
-2. Test how Glean handles imported/uploaded copies alongside existing Shared Skills.
-3. Align package representation with Grace.
-4. Merge the approved pilot representation to `main`.
-5. Select one real Skill for a clean GitHub-backed synchronization test. **GitHub is the sole writer** during that test: no edits in Glean.
-6. Take unresolved product/platform questions to Glean.
-
-## What belongs here
-
-- Approved Skill packages, under [`skills/`](skills/README.md)
-- Short pointers to the Skill standard, under [`standards/`](standards/README.md)
-- Contribution and review guidance ([CONTRIBUTING.md](CONTRIBUTING.md))
-
-## What does not belong here
-
-- Credentials, API keys, tokens, or other secrets
-- Unapproved or experimental candidate Skills (they go through Skills Auditor first)
-- Skills Auditor evaluation logic, AI judging, or audit state
-- Deployment, sync, or notification infrastructure
-- Client data or other confidential material
-
-## How a skill moves
-
-1. **Candidate**: a new or updated Skill is drafted by the owning domain team / FDE.
-2. **Audited**: Skills Auditor runs a full audit (new Skill) or a delta/regression audit (update).
-3. **Approved**: a human approves, and it is merged into this repository. The merged state is the approved version.
-4. **Maintained**: later changes, including UAT feedback, come in as pull requests here.
-5. **Published**: the approved version reaches Glean and/or Claude. Publishing is separate from merging, and the mechanism (manual vs GitHub sync) is under validation.
-
-## Initial Landing Set
-
-The first population of this repository is the set of Skills launched through the initial Enterprise GPT Skills rollout on September 28, 2026:
-
-- `story-writing-for-presentations`
-- `outlook-event-creation`
-- `ahead-meeting-prep-and-notes`
-- `ahead-weekly-recap`
-- `ahead-skill-package-builder`
-- `ahead-daily-digest`
-
-These were launched in Glean and were also announced as available to users with Claude access.
-
-The six Glean org-wide export ZIPs are now staged under `skills/shared/` as baseline artifacts. Staging them does **not** mean they are approved Platform Skills or that anything has been published.
-
-- Each landed Skill should preserve its version history and provenance.
-- Once an artifact is reviewed and merged, `main` is the approved source for that Skill.
-- Availability in Glean or Claude is separate from the repository source of truth.
-- Updates based on UAT or user feedback come back through a new branch and pull request, not through silent changes to deployed copies.
-
-### Landing workflow
-
-```mermaid
-flowchart TD
-    A["Existing launched skill"] --> B["Approved artifact supplied"]
-    B --> C["Platform-Skills branch"]
-    C --> D["Pull request"]
-    D --> E["Peer review"]
-    E --> F["Merge to main"]
-    F --> G["Platform-Skills is the canonical<br/>approved repository version"]
-    G --> H["Publish / sync to Glean and/or Claude<br/>(mechanism under validation)"]
-```
-
-## Version history
-
-Git is the version history. Each approved change is a merged pull request, so the diff, the reviewer, and the reasoning stay attached to the change. To see what changed in a Skill, read its history:
+Run the check on your own computer before you push, from the repository root:
 
 ```sh
-git log --follow -- skills/<platform>/<skill-name>
+python3 -I -B tools/skillpkg.py ci --root .
 ```
 
-## Why human review is the approval gate
+It needs Python 3 and nothing else to install. Each problem is printed as an `ERROR` or a `WARNING`, followed by a line that says how to fix it. For example:
 
-A Skill shapes what Claude and Glean do for AHEAD employees. Automated checks catch structure and consistency problems, but a teammate has to confirm the Skill is correct and appropriate. Merging a pull request in this repository is that confirmation, which is why the author never approves their own change.
-
-## How UAT feedback becomes a change
-
-UAT feedback is never applied as an undocumented edit directly on a platform. It follows the same path as any other change:
-
-```mermaid
-flowchart LR
-    A["UAT feedback"] --> B["Update approved source"]
-    B --> C["Pull request"]
-    C --> D["Peer review"]
-    D --> E["Merge"]
-    E --> F["New approved version"]
-    F --> G["Publish / sync"]
+```text
+Skill check: scanned 1 file; 1 skill folder: my-skill.
+ERROR skills/my-skill/SKILL.md:2: frontmatter name does not match the folder name (name: other-name, folder: my-skill)
+  How to fix: Make them identical: rename the folder to skills/<name>/, or change the name: line to the folder name.
+WARNING skills/my-skill/SKILL.md:1: recommended frontmatter fields are missing (version, owner, team, ahead-platform, audience, publication-status, glean-link, claude-link)
+  How to fix: Add them when you can. This is a warning; the check still passes.
+FAIL: 1 error, 1 warning. Each problem above says how to fix it.
 ```
 
-If a platform copy has been edited directly, bring that change back here as a pull request so the repository stays the source of truth.
+- An **ERROR** fails the check. Fix it, commit, and push again; the checks re-run on the pull request.
+- A **WARNING** does not fail the check. Fix it when you can.
+- The report also lists warnings for skills that are already in the repository, so a good new skill can still print several. Errors come first, and the line that starts `CI OK` or `FAIL` is the result. Look for lines that name your own folder, `skills/<id>/`.
+- On a pull request the same messages are printed in the check's log, and when the tool runs in GitHub Actions it also writes a job summary and file annotations. The warning that a skill's version was not increased appears only on the pull request check, because it compares your skill with what is on `main`; the local command above cannot show it.
+
+<details>
+<summary>Every message, and how to fix it</summary>
+
+### Errors found anywhere in the repository
+
+| Message | How to fix |
+| --- | --- |
+| `ZIP files are not accepted in this repository` | `Unzip it into its own folder skills/<id>/ so that SKILL.md is at the top of that folder, then delete the ZIP. ZIP is an export format, not the repository format.` |
+| `symbolic links (shortcuts) are not allowed in this repository` | `Replace the link with a copy of the real file, or delete it.` |
+| `unsafe file or folder name (backslash, control character or drive letter)` | `Rename it using only letters, digits, hyphens, underscores and dots, so that it works on Windows, macOS and Linux.` |
+| `files directly in skills/ are not part of any skill` | `Move it into a skill folder skills/<id>/, or out of skills/. Only skills/README.md may sit directly in skills/.` |
+| `SKILL.md is only allowed directly inside a skill folder, at skills/<id>/SKILL.md` | `Move the skill so that this file is at skills/<id>/SKILL.md: one folder per skill, directly under skills/, with no folder in between.` |
+| `no skills/ folder found, so nothing was checked` | `Run the check from the repository root, or pass --root with the repository path.` |
+
+### Errors found in a skill folder
+
+| Message | How to fix |
+| --- | --- |
+| `folder name is not a valid skill id` | `Use 2 to 64 characters: lowercase letters, digits and hyphens, starting with a letter or digit (for example my-skill). Rename the folder and the name: field together.` |
+| `skill folder has no SKILL.md at its top level` | `Each folder directly under skills/ is one skill and needs skills/<id>/SKILL.md. If unzipping an export added an extra folder level (skills/<id>/<id>/SKILL.md), move those files up one level.` |
+| `the file must be named SKILL.md, in capital letters` | `Rename the file to SKILL.md.` |
+| `two paths in this skill differ only in upper/lower case` | `Rename or remove one of them; they collide on Windows and macOS.` |
+| `file type is not allowed in a skill folder` | `Allowed: .css .csv .html .jpg .js .json .md .png .py .txt .yaml .yml and LICENSE files. Remove the file or convert it to an allowed type.` |
+| `file is larger than the 5 MB per-file limit` | `Make the file smaller or remove it. Keep large data outside the repository and link to it from SKILL.md.` |
+| `skill folder is larger than the 25 MB total limit` | `Remove or shrink files. Keep large data outside the repository and link to it from SKILL.md.` |
+| `skill folder has more than 200 files` | `Remove files the skill does not need, or combine small files.` |
+| `SKILL.md is not valid UTF-8 text` | `Save SKILL.md with UTF-8 encoding.` |
+| `SKILL.md does not start with a frontmatter block` | `Make the first line of SKILL.md exactly ---, then add name: and description: lines, then a line with only ---.` |
+| `SKILL.md frontmatter block is not closed` | `Add a line with only --- after the last frontmatter field.` |
+| `frontmatter field appears more than once` | `Keep one line for the field and delete the others.` |
+| `required frontmatter field is missing or empty` | `Add it to the frontmatter. name: must equal the folder name; description: says what the skill does and when to use it.` |
+| `frontmatter name does not match the folder name` | `Make them identical: rename the folder to skills/<name>/, or change the name: line to the folder name.` |
+
+### Warnings (the check still passes)
+
+| Message | How to fix |
+| --- | --- |
+| `recommended frontmatter fields are missing` | `Add them when you can. This is a warning; the check still passes.` |
+| `owner contains an email address, and this repository is public` | `Consider a team name or GitHub handle instead. This is a warning; the check still passes.` |
+| `skill files changed but version was not increased` | `Increase version: in SKILL.md (for example 1.0.0 to 1.0.1); git history is the version history. This is a warning; the check still passes.` |
+
+</details>
+
+## What belongs here, and what does not
+
+Belongs here:
+
+- skill folders under [`skills/`](skills/README.md)
+- short pointers to writing standards under [`standards/`](standards/README.md)
+- contribution, review and governance guidance
+
+Does not belong here:
+
+- credentials, API keys, tokens or other secrets
+- client data or other confidential material
+- runtime infrastructure, deployment or sync tooling
+
+## Publishing to Glean or Claude
+
+Merging a pull request adds or updates a skill **in this repository**. It does not publish the skill to Glean or Claude, and nothing here syncs with either platform or has been verified to. The optional `glean-link` and `claude-link` frontmatter fields are pointers that a skill's owner maintains by hand.
 
 ## Repository layout
 
 ```text
-README.md            this file
-CONTRIBUTING.md      how to propose and review a change
-skills/              Skills (claude/, glean/, shared/ for source ZIPs)
-projections/glean/   generated Glean-readable folders (approved Skills only)
-provenance/          per-Skill hash, audit and deployment record
-tools/skillpkg.py    validation, projection and CI gate (stdlib Python)
-tests/               unit tests (python3 -I -m unittest discover -s tests)
-docs/                operations, governance, Auditor contract, handoff
-standards/           pointers to the Skill standard
-.github/             CODEOWNERS, pull request template, validate-skills workflow
+skills/<id>/SKILL.md   one folder per skill (plus any files the skill needs)
+standards/             pointers to skill-writing standards
+docs/                  governance and maintainer notes
+tools/  tests/         the checking tool that CI runs, and its tests
+.github/               CI workflow, pull request template, code owners
+CONTRIBUTING.md        how to propose and review a change
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) to propose a change.
+| Doc | Contents |
+| --- | --- |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | How to add, update and review a skill |
+| [docs/GOVERNANCE.md](docs/GOVERNANCE.md) | Approval authority and required repository settings |
+| [docs/OPERATIONS.md](docs/OPERATIONS.md) | Notes for maintainers: assisted submissions, rollback |
+
+Skills Auditor, an earlier audit step, is **paused** and not required for a merge; see [docs/AUDITOR-CONTRACT.md](docs/AUDITOR-CONTRACT.md).
