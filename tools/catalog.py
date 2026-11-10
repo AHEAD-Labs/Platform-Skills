@@ -18,6 +18,9 @@ FRONTMATTER_KEYS = {"name": "name", "description": "description", "version": "ve
                     "glean-link": "glean-link", "claude-link": "claude-link"}
 MAX_READ_BYTES = 256 * 1024
 MD_DESCRIPTION_MAX = 200
+NO_AUDIENCE = "No audience set"
+AUDIENCE_COLUMNS = ["id", "description", "version", "platforms", "publication-status", "source path"]
+AUDIENCE_SPLIT_RE = re.compile(r"[;,]")
 
 KEY_RE = re.compile(r"^([A-Za-z0-9_][A-Za-z0-9_.-]*)\s*:(?:\s+(.*))?$")
 BLOCK_SCALAR_RE = re.compile(r"^[>|][+-]?$")
@@ -227,16 +230,61 @@ def render_markdown(rows, published=None):
     return "\n".join(lines) + "\n"
 
 
+def _audiences(row):
+    """The audience values a skill declares, in order, de-duplicated ignoring case. Never inferred."""
+    seen, names = set(), []
+    for part in AUDIENCE_SPLIT_RE.split(row["audience"]):
+        part = part.strip()
+        if part and part.lower() not in seen:
+            seen.add(part.lower())
+            names.append(part)
+    return names
+
+
+def group_by_audience(rows):
+    """[(heading, rows)] with one group per audience (case-insensitive, sorted) and, last, the
+    skills that declare none. A skill appears under every audience it declares."""
+    groups, blank = {}, []
+    for row in rows:
+        names = _audiences(row)
+        if not names:
+            blank.append(row)
+        for name in names:
+            groups.setdefault(name.lower(), (name, []))[1].append(row)
+    result = [groups[key] for key in sorted(groups)]
+    if blank:
+        result.append((NO_AUDIENCE, blank))
+    return result
+
+
+def audience_summary(rows):
+    return [f"{heading} {len(group)}" for heading, group in group_by_audience(rows)]
+
+
+def render_audience_markdown(rows):
+    n = len(rows)
+    lines = ["# Skills by audience", "",
+             f"{n} skill{'s' if n != 1 else ''}. A skill is listed under each audience it declares in its "
+             f"frontmatter; skills that declare none are under \"{NO_AUDIENCE}\". Audience is never inferred.", ""]
+    for heading, group in group_by_audience(rows):
+        lines += [f"## {heading} ({len(group)})", ""]
+        lines += _md_table(AUDIENCE_COLUMNS, group, {"description": MD_DESCRIPTION_MAX})
+        lines.append("")
+    return "\n".join(lines).rstrip("\n") + "\n"
+
+
 def write_outputs(out_dir, rows, published=None):
-    """Write catalog.csv and catalog.md (plus published-not-in-github.csv when given) to out_dir."""
+    """Write catalog.csv, catalog.md and catalog-by-audience.md (plus published-not-in-github.csv
+    when given) to out_dir."""
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
-    paths = [out / "catalog.csv", out / "catalog.md"]
+    paths = [out / "catalog.csv", out / "catalog.md", out / "catalog-by-audience.md"]
     write_csv(paths[0], COLUMNS, rows)
     paths[1].write_text(render_markdown(rows, published), encoding="utf-8")
+    paths[2].write_text(render_audience_markdown(rows), encoding="utf-8")
     if published is not None:
         paths.append(out / "published-not-in-github.csv")
-        write_csv(paths[2], published[0], published[1])
+        write_csv(paths[3], published[0], published[1])
     return paths
 
 
@@ -268,14 +316,18 @@ def non_ahead_emails(owner):
 
 def build_parser():
     parser = argparse.ArgumentParser(
-        description="Generate a skills catalog (CSV + Markdown) from skills/*/SKILL.md frontmatter. "
-                    "Output is a local artifact: never commit it.")
+        description="Generate a skills catalog from skills/*/SKILL.md frontmatter. Writes catalog.csv, "
+                    "catalog.md and catalog-by-audience.md to --out. Output is a local artifact: never commit it.",
+        epilog="Audience view: each skill is listed under every value of its frontmatter `audience` "
+               "(a list, or text split on commas or semicolons; matched ignoring case). Skills with no "
+               "audience go under \"No audience set\". Audience is never inferred from the description.")
     parser.add_argument("--skills-dir", default=str(Path(__file__).resolve().parent.parent / "skills"),
                         help="folder holding <id>/SKILL.md (default: this repo's skills/)")
     parser.add_argument("--out", default="/tmp", help="folder for the output files (default: /tmp)")
     parser.add_argument("--published-list", metavar="CSV",
-                        help="CSV of published skills (needs an id or name column); adds a "
-                             "'published but not in GitHub' sheet")
+                        help="CSV of skills published elsewhere. Needs a header row with an id or name "
+                             "column (any case); other columns are kept as they are. Matched against each "
+                             "skill's folder id and frontmatter name. Adds a 'published but not in GitHub' sheet")
     return parser
 
 
@@ -318,6 +370,9 @@ def main(argv=None):
     if personal:
         print("Owner fields with a non-AHEAD address (possible personal email; skill ids only): "
               + ", ".join(personal))
+    print("Audience view: " + (", ".join(audience_summary(rows)) or "no skills"))
+    if rows and not any(_audiences(r) for r in rows):
+        print(f'All {len(rows)} skills are under "{NO_AUDIENCE}": none declares an audience.')
     if published is not None:
         print(f"Published but not in GitHub: {len(published[1])}")
     print("Wrote:")

@@ -5,6 +5,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "tools"))
 import catalog  # noqa: E402
 
+OUTPUT_FILES = ["catalog-by-audience.md", "catalog.csv", "catalog.md"]
 EXPECTED_COLUMNS = ["id", "name", "description", "version", "owner", "team", "platforms",
                     "publication-status", "audience", "source path", "glean-link", "claude-link"]
 
@@ -315,14 +316,13 @@ class TestWriteOutputs(Fixture):
     def test_writes_exactly_catalog_csv_and_md_and_creates_the_folder(self):
         out = self.root / "does" / "not" / "exist"
         paths = catalog.write_outputs(out, [sample_row()])
-        self.assertEqual(sorted(p.name for p in paths), ["catalog.csv", "catalog.md"])
-        self.assertEqual(sorted(os.listdir(out)), ["catalog.csv", "catalog.md"])
+        self.assertEqual(sorted(p.name for p in paths), OUTPUT_FILES)
+        self.assertEqual(sorted(os.listdir(out)), OUTPUT_FILES)
 
     def test_published_sheet_is_written_as_its_own_csv_even_when_empty(self):
         out = self.root / "out"
         paths = catalog.write_outputs(out, [sample_row()], (["id", "owner"], []))
-        self.assertEqual(sorted(p.name for p in paths),
-                         ["catalog.csv", "catalog.md", "published-not-in-github.csv"])
+        self.assertEqual(sorted(p.name for p in paths), OUTPUT_FILES + ["published-not-in-github.csv"])
         text = (out / "published-not-in-github.csv").read_text(encoding="utf-8-sig")
         self.assertEqual(text.strip(), "id,owner")
 
@@ -352,7 +352,7 @@ class TestMain(Fixture):
         self.make_skill("fixture-min", doc("---", "name: fixture-min", "description: d", "---"))
         code, out, err = self.run_main()
         self.assertEqual((code, err), (0, ""))
-        self.assertEqual(sorted(os.listdir(self.out)), ["catalog.csv", "catalog.md"])
+        self.assertEqual(sorted(os.listdir(self.out)), OUTPUT_FILES)
         with open(self.out / "catalog.csv", newline="", encoding="utf-8-sig") as f:
             self.assertEqual(next(csv.reader(f)), EXPECTED_COLUMNS)
         self.assertIn("Skills: 2", out)
@@ -394,8 +394,7 @@ class TestMain(Fixture):
         self.assertEqual(code, 0)
         self.assertEqual((snapshot(self.root), snapshot(self.aux)), before)
         self.assertEqual(os.listdir(cwd.name), [])
-        self.assertEqual(sorted(os.listdir(self.out)),
-                         ["catalog.csv", "catalog.md", "published-not-in-github.csv"])
+        self.assertEqual(sorted(os.listdir(self.out)), OUTPUT_FILES + ["published-not-in-github.csv"])
 
     def test_skipped_skills_are_reported_in_the_output(self):
         outside = self.root / "outside.md"
@@ -415,7 +414,7 @@ class TestMain(Fixture):
         listing.write_text("id\nfixture-alpha\nfixture-delta\n")
         code, out, _ = self.run_main("--published-list", str(listing))
         self.assertEqual(code, 0)
-        self.assertEqual(sorted(os.listdir(self.out)), ["catalog.csv", "catalog.md", "published-not-in-github.csv"])
+        self.assertEqual(sorted(os.listdir(self.out)), OUTPUT_FILES + ["published-not-in-github.csv"])
         self.assertIn("Published but not in GitHub: 1", out)
 
     def test_bad_published_list_is_an_error_and_writes_nothing(self):
@@ -439,6 +438,30 @@ class TestMain(Fixture):
         code, _, err = self.run_main("--skills-dir", str(self.root / "nope"))
         self.assertEqual(code, 2)
         self.assertIn("not a folder", err)
+
+    def test_all_blank_audiences_are_called_out_in_the_run_summary(self):
+        self.make_skill("fixture-a", doc("---", "name: fixture-a", "description: d", "---"))
+        self.make_skill("fixture-b", doc("---", "name: fixture-b", "description: d", "---"))
+        code, out, _ = self.run_main()
+        self.assertEqual(code, 0)
+        self.assertIn('Audience view: No audience set 2', out)
+        self.assertIn('All 2 skills are under "No audience set": none declares an audience.', out)
+        view = (self.out / "catalog-by-audience.md").read_text(encoding="utf-8")
+        self.assertIn("## No audience set (2)", view)
+
+    def test_mixed_audiences_are_counted_and_no_all_blank_warning(self):
+        self.make_skill("fixture-a", doc("---", "name: fixture-a", "audience: Sales", "---"))
+        self.make_skill("fixture-b", doc("---", "name: fixture-b", "description: d", "---"))
+        _, out, _ = self.run_main()
+        self.assertIn("Audience view: Sales 1, No audience set 1", out)
+        self.assertNotIn("none declares an audience", out)
+
+    def test_help_states_the_published_list_columns_and_the_audience_rule(self):
+        text = " ".join(catalog.build_parser().format_help().split())
+        self.assertIn("header row with an id or name column", text)
+        self.assertIn("other columns are kept as they are", text)
+        self.assertIn("audience", text)
+        self.assertIn("No audience set", text)
 
 
 class TestHostileInputs(unittest.TestCase):
@@ -483,6 +506,60 @@ class TestOwnerEmails(unittest.TestCase):
 
     def test_text_without_an_email_has_none(self):
         self.assertEqual(catalog.owner_emails("Ryan B, Adam W (team lead) @ home"), [])
+
+
+def audience_rows():
+    return [sample_row(id="fixture-a", name="a", audience="Sales, Presales", description="Alpha."),
+            sample_row(id="fixture-b", name="b", audience="sales", description="Beta."),
+            sample_row(id="fixture-c", name="c", audience="", description="Helps sellers and sales teams.")]
+
+
+class TestAudienceView(Fixture):
+    def test_groups_by_each_audience_sorted_with_blank_last(self):
+        groups = catalog.group_by_audience(audience_rows())
+        self.assertEqual([(h, [r["id"] for r in rs]) for h, rs in groups],
+                         [("Presales", ["fixture-a"]), ("Sales", ["fixture-a", "fixture-b"]),
+                          ("No audience set", ["fixture-c"])])
+
+    def test_audience_is_never_inferred_from_the_description(self):
+        (heading, rows), = catalog.group_by_audience([audience_rows()[2]])
+        self.assertEqual((heading, [r["id"] for r in rows]), ("No audience set", ["fixture-c"]))
+
+    def test_list_form_and_semicolons_split_the_same_way(self):
+        self.make_skill("fixture-l", doc("---", "name: fixture-l", "audience: [Sales, Presales]", "---"))
+        self.make_skill("fixture-s", doc("---", "name: fixture-s", "audience: Sales; Presales", "---"))
+        rows, _ = self.collect()
+        groups = catalog.group_by_audience(rows)
+        self.assertEqual([(h, [r["id"] for r in rs]) for h, rs in groups],
+                         [("Presales", ["fixture-l", "fixture-s"]), ("Sales", ["fixture-l", "fixture-s"])])
+
+    def test_no_blank_heading_when_every_skill_has_an_audience(self):
+        self.assertEqual([h for h, _ in catalog.group_by_audience(audience_rows()[:2])], ["Presales", "Sales"])
+
+    def test_markdown_lists_each_skill_under_each_of_its_audiences(self):
+        md = catalog.render_audience_markdown(audience_rows())
+        headings = [l for l in md.splitlines() if l.startswith("## ")]
+        self.assertEqual(headings, ["## Presales (1)", "## Sales (2)", "## No audience set (1)"])
+        sections = md.split("\n## ")[1:]
+        self.assertIn("| fixture-a |", sections[0])
+        self.assertIn("| fixture-a |", sections[1])
+        self.assertIn("| fixture-b |", sections[1])
+        self.assertIn("| fixture-c |", sections[2])
+        self.assertNotIn("| fixture-c |", sections[0] + sections[1])
+
+    def test_markdown_never_includes_owner_values(self):
+        rows = [sample_row(owner="Pat Person (pat@example.com)", audience="Sales")]
+        md = catalog.render_audience_markdown(rows)
+        self.assertNotIn("Pat Person", md)
+        self.assertNotIn("pat@example.com", md)
+
+    def test_summary_names_each_audience_count(self):
+        self.assertEqual(catalog.audience_summary(audience_rows()),
+                         ["Presales 1", "Sales 2", "No audience set 1"])
+
+    def test_empty_catalog_gives_an_empty_view(self):
+        self.assertEqual(catalog.group_by_audience([]), [])
+        self.assertIn("0 skills", catalog.render_audience_markdown([]))
 
 
 if __name__ == "__main__":
