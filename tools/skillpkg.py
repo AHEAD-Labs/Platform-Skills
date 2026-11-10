@@ -1,19 +1,23 @@
 #!/usr/bin/env python3
-"""Deterministic Skill package intake and projection (stdlib only).
+"""Skill checks for Platform-Skills (stdlib only).
 
-validate : safety-check a Skill ZIP without writing anything
-plan     : list the audit each ZIP needs (full for new Skills, delta vs the approved version)
+ci       : the repo-wide check run by .github/workflows/validate.yml. A skill is a plain folder
+           skills/<id>/ with SKILL.md at its root. Every problem is reported with how to fix it,
+           as text, as GitHub annotations and in the job summary. Exit 0 = pass (warnings
+           allowed), 1 = at least one error.
+
+Paused Skills Auditor lifecycle (kept, not part of the required check):
+validate : safety-check a Skill ZIP export without writing anything
+plan     : list the audit each ZIP would need (full for new Skills, delta vs the approved version)
 project  : ZIP + REVIEW_READY Skills Auditor report + approval claim -> Glean folder + provenance
 verify   : confirm a projection matches its source ZIP exactly
-ci       : repo-wide gate used by .github/workflows/validate.yml
 
-Trust model: files in the change under review are data, never authority. ci() takes seed
-baselines and approved-version state only from --trusted-root (a checkout of the base branch) and
-audit results only from --auditor-reports (written by a trusted Auditor run, never committed).
-Approval records are unauthenticated claims; approval authority is the GitHub PR review.
-Archives are untrusted data: nothing in them is ever executed.
+Trust model: files in the change under review are data, never authority. The workflow runs the
+base branch's copy of this tool, which scans the whole working tree, never just changed paths.
+Approval is a human code-owner review of the pull request. Nothing in the tree is ever executed.
 """
 import argparse, hashlib, json, os, re, shutil, stat, sys, tempfile, zipfile
+from dataclasses import dataclass, field
 from pathlib import Path, PurePosixPath
 
 AUDIT_SCHEMA = "skills-auditor-report-v1"  # Skills-Marketplace scripts/skills_auditor.py (db4d148)
@@ -279,8 +283,9 @@ def plan(root, trusted_root=None):
     return out
 
 
-def ci(root, trusted_root=None, reports_dir=None):
-    """Raise PolicyBlock/PackageError unless every ZIP is a trusted baseline or has a trusted report."""
+def auditor_gate(root, trusted_root=None, reports_dir=None):
+    """PAUSED: the old ZIP + Skills Auditor gate. Not called by `ci` or the workflow; kept unused.
+    Raise PolicyBlock/PackageError unless every ZIP is a trusted baseline or has a trusted report."""
     root = Path(root)
     baseline = _trusted_baseline(trusted_root)
     head_bp = root / "skills/baseline-hashes.json"
@@ -325,6 +330,465 @@ def ci(root, trusted_root=None, reports_dir=None):
     return status
 
 
+# ---------------------------------------------------------------------------------------------
+# Folder check (contribution contract v1). This is what `ci` runs.
+# Kept from the hardened ZIP gate: whole-tree scan, path safety, no symlinks, file-type allowlist
+# (ALLOWED_EXT) and size limits (MAX_FILE_BYTES, MAX_TOTAL_BYTES, MAX_ENTRIES), applied per skill.
+# ---------------------------------------------------------------------------------------------
+
+SKILLS_DIR = "skills"
+SKILLS_DIR_FILES = {"README.md"}  # the only files allowed directly in skills/
+PLACEHOLDER_FILES = {".gitkeep"}  # a folder holding only these is an empty placeholder, not a skill
+REQUIRED_FIELDS = ("name", "description")
+RECOMMENDED_FIELDS = ("version", "owner", "team", "ahead-platform", "audience",
+                      "publication-status", "glean-link", "claude-link")
+ZIP_MAGIC = (b"PK\x03\x04", b"PK\x05\x06", b"PK\x07\x08")
+EMAIL_RE = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}")
+KEY_RE = re.compile(r"^([A-Za-z0-9_-]+):(?:\s+(.*))?$")
+BLOCK_SCALAR_RE = re.compile(r"^[|>][0-9+-]*$")
+
+# code -> (problem, how to fix). Contributor docs quote these strings verbatim and
+# tests/test_skillpkg.py pins every one of them: do not reword.
+MESSAGES = {
+    "zip-file": (
+        "ZIP files are not accepted in this repository",
+        "Unzip it into its own folder skills/<id>/ so that SKILL.md is at the top of that folder, "
+        "then delete the ZIP. ZIP is an export format, not the repository format."),
+    "symlink": (
+        "symbolic links (shortcuts) are not allowed in this repository",
+        "Replace the link with a copy of the real file, or delete it."),
+    "unsafe-name": (
+        "unsafe file or folder name (backslash, control character or drive letter)",
+        "Rename it using only letters, digits, hyphens, underscores and dots, so that it works on "
+        "Windows, macOS and Linux."),
+    "skill-md-misplaced": (
+        "SKILL.md is only allowed directly inside a skill folder, at skills/<id>/SKILL.md",
+        "Move the skill so that this file is at skills/<id>/SKILL.md: one folder per skill, "
+        "directly under skills/, with no folder in between."),
+    "skill-md-case": (
+        "the file must be named SKILL.md, in capital letters",
+        "Rename the file to SKILL.md."),
+    "missing-skill-md": (
+        "skill folder has no SKILL.md at its top level",
+        "Each folder directly under skills/ is one skill and needs skills/<id>/SKILL.md. If "
+        "unzipping an export added an extra folder level (skills/<id>/<id>/SKILL.md), move those "
+        "files up one level."),
+    "bad-id": (
+        "folder name is not a valid skill id",
+        "Use 2 to 64 characters: lowercase letters, digits and hyphens, starting with a letter or "
+        "digit (for example my-skill). Rename the folder and the name: field together."),
+    "not-utf8": (
+        "SKILL.md is not valid UTF-8 text",
+        "Save SKILL.md with UTF-8 encoding."),
+    "no-frontmatter": (
+        "SKILL.md does not start with a frontmatter block",
+        "Make the first line of SKILL.md exactly ---, then add name: and description: lines, then "
+        "a line with only ---."),
+    "frontmatter-unclosed": (
+        "SKILL.md frontmatter block is not closed",
+        "Add a line with only --- after the last frontmatter field."),
+    "duplicate-field": (
+        "frontmatter field appears more than once",
+        "Keep one line for the field and delete the others."),
+    "missing-required": (
+        "required frontmatter field is missing or empty",
+        "Add it to the frontmatter. name: must equal the folder name; description: says what the "
+        "skill does and when to use it."),
+    "name-mismatch": (
+        "frontmatter name does not match the folder name",
+        "Make them identical: rename the folder to skills/<name>/, or change the name: line to "
+        "the folder name."),
+    "file-type": (
+        "file type is not allowed in a skill folder",
+        "Allowed: .css .csv .html .jpg .json .md .png .py .txt .yaml .yml and LICENSE files. "
+        "Remove the file or convert it to an allowed type."),
+    "file-too-large": (
+        "file is larger than the 5 MB per-file limit",
+        "Make the file smaller or remove it. Keep large data outside the repository and link to "
+        "it from SKILL.md."),
+    "skill-too-large": (
+        "skill folder is larger than the 25 MB total limit",
+        "Remove or shrink files. Keep large data outside the repository and link to it from "
+        "SKILL.md."),
+    "too-many-files": (
+        "skill folder has more than 200 files",
+        "Remove files the skill does not need, or combine small files."),
+    "case-collision": (
+        "two paths in this skill differ only in upper/lower case",
+        "Rename or remove one of them; they collide on Windows and macOS."),
+    "loose-file": (
+        "files directly in skills/ are not part of any skill",
+        "Move it into a skill folder skills/<id>/, or out of skills/. Only skills/README.md may "
+        "sit directly in skills/."),
+    "no-skills-dir": (
+        "no skills/ folder found, so nothing was checked",
+        "Run the check from the repository root, or pass --root with the repository path."),
+    # Warnings: reported, but the check still passes.
+    "recommended-missing": (
+        "recommended frontmatter fields are missing",
+        "Add them when you can. This is a warning; the check still passes."),
+    "owner-email": (
+        "owner contains an email address, and this repository is public",
+        "Consider a team name or GitHub handle instead. This is a warning; the check still passes."),
+    "version-not-bumped": (
+        "skill files changed but version was not increased",
+        "Increase version: in SKILL.md (for example 1.0.0 to 1.0.1); git history is the version "
+        "history. This is a warning; the check still passes."),
+}
+WARNING_CODES = frozenset({"recommended-missing", "owner-email", "version-not-bumped"})
+
+
+@dataclass(frozen=True)
+class Finding:
+    code: str
+    path: str        # repo-relative POSIX path; a folder ends with "/"
+    detail: str = ""
+    line: int = 0    # 1-based line in `path`; 0 when not applicable
+
+    @property
+    def level(self):
+        return "warning" if self.code in WARNING_CODES else "error"
+
+    @property
+    def message(self):
+        problem = MESSAGES[self.code][0]
+        return f"{problem} ({self.detail})" if self.detail else problem
+
+    @property
+    def fix(self):
+        return MESSAGES[self.code][1]
+
+
+@dataclass
+class Report:
+    findings: list
+    skills: dict = field(default_factory=dict)       # id -> {"errors": n, "warnings": n}
+    placeholders: list = field(default_factory=list)
+    files_scanned: int = 0
+
+    @property
+    def errors(self):
+        return [f for f in self.findings if f.level == "error"]
+
+    @property
+    def warnings(self):
+        return [f for f in self.findings if f.level == "warning"]
+
+
+class _FrontmatterError(Exception):
+    def __init__(self, code):
+        super().__init__(code)
+        self.code = code
+
+
+def _scalar(parts):
+    """Value of one top-level frontmatter key from its inline text plus continuation lines."""
+    head, rest = parts[0].strip(), [p for p in parts[1:] if p]
+    if BLOCK_SCALAR_RE.match(head):  # `key: |` or `key: >-` followed by indented text
+        return " ".join(rest).strip()
+    if not head:  # list or mapping on the following lines
+        return ", ".join(p[1:].strip() if p.startswith("-") else p for p in rest).strip(" ,")
+    if head[0] in "'\"":
+        end = head.rfind(head[0])
+        if end > 0:
+            return head[1:end].strip()
+        return " ".join([head[1:]] + rest).rstrip(head[0]).strip()
+    value = head.split(" #", 1)[0].strip()
+    return " ".join([value] + rest).strip()
+
+
+def parse_frontmatter(text):
+    """Minimal frontmatter reader (stdlib only, no YAML library). Top-level `key: value` lines;
+    indented or `- ` lines continue the previous key. Returns (values, key_line, duplicates);
+    raises _FrontmatterError('no-frontmatter' | 'frontmatter-unclosed')."""
+    lines = text.splitlines()
+    if not lines or lines[0].strip() != "---":
+        raise _FrontmatterError("no-frontmatter")
+    raw, where, dups, key = {}, {}, [], None
+    for n, ln in enumerate(lines[1:], start=2):
+        if ln.rstrip() == "---":
+            return {k: _scalar(v) for k, v in raw.items()}, where, dups
+        if not ln.strip() or ln.lstrip().startswith("#"):
+            continue
+        m = KEY_RE.match(ln)
+        if m and not ln[0].isspace():
+            key = m.group(1)
+            if key in raw:
+                dups.append((key, n))
+                key = None  # the first occurrence is the one that is checked
+                continue
+            raw[key], where[key] = [m.group(2) or ""], n
+        elif key is not None:
+            raw[key].append(ln.strip())
+    raise _FrontmatterError("frontmatter-unclosed")
+
+
+def _unsafe_segment(name):
+    return ("\\" in name or any(ord(c) < 32 or ord(c) == 127 for c in name)
+            or name in ("", ".", "..") or re.match(r"^[A-Za-z]:", name) is not None)
+
+
+def _zip_detail(p, name):
+    """None if not a ZIP; '' if named .zip; a note if only the content shows it is a ZIP."""
+    if name.lower().endswith(".zip"):
+        return ""
+    with open(p, "rb") as f:
+        return "the file content is a ZIP archive" if f.read(4) in ZIP_MAGIC else None
+
+
+def _scan_tree(root):
+    """Walk the WHOLE working tree (only the top-level .git is skipped) so nothing can hide from
+    the check. Returns (findings, paths reported as ZIPs, number of regular files scanned)."""
+    findings, zips, count = [], set(), 0
+    for dirpath, dirnames, filenames in os.walk(root, followlinks=False):
+        here = Path(dirpath)
+        if here == root:
+            for names in (dirnames, filenames):
+                if ".git" in names:
+                    names.remove(".git")
+        dirnames.sort()
+        for name in sorted(dirnames + filenames):
+            p = here / name
+            rel = p.relative_to(root).as_posix()
+            is_dir = name in dirnames
+            if _unsafe_segment(name):
+                findings.append(Finding("unsafe-name", rel + "/" if is_dir else rel))
+            mode = os.lstat(p).st_mode
+            if stat.S_ISLNK(mode):
+                findings.append(Finding("symlink", rel))
+                continue
+            if is_dir:
+                continue
+            if not stat.S_ISREG(mode):
+                findings.append(Finding("symlink", rel, "not a regular file"))
+                continue
+            count += 1
+            parts = rel.split("/")
+            zd = _zip_detail(p, name)
+            if zd is not None:
+                findings.append(Finding("zip-file", rel, zd))
+                zips.add(rel)
+            if name.casefold() == "skill.md" and not (len(parts) == 3 and parts[0] == SKILLS_DIR):
+                nested_in_skill_without_root_file = (
+                    len(parts) > 3 and parts[0] == SKILLS_DIR
+                    and "SKILL.md" not in os.listdir(root / SKILLS_DIR / parts[1]))
+                if not nested_in_skill_without_root_file:  # else reported as missing-skill-md
+                    findings.append(Finding("skill-md-misplaced", rel))
+            if len(parts) == 2 and parts[0] == SKILLS_DIR and name not in SKILLS_DIR_FILES and zd is None:
+                findings.append(Finding("loose-file", rel))
+    return findings, zips, count
+
+
+def _skill_files(d):
+    """Sorted relative paths of the regular files under d. Links are never followed (the tree scan
+    reports them)."""
+    out = []
+    for dirpath, dirnames, filenames in os.walk(d, followlinks=False):
+        for name in filenames:
+            p = Path(dirpath) / name
+            if stat.S_ISREG(os.lstat(p).st_mode):
+                out.append(p.relative_to(d).as_posix())
+    return sorted(out)
+
+
+def _digest(d):
+    return {r: sha256((d / r).read_bytes()) for r in _skill_files(d)}
+
+
+def _allowed_type(rel):
+    pp = PurePosixPath(rel)
+    return pp.suffix.lower() in ALLOWED_EXT or pp.name.startswith("LICENSE")
+
+
+def _check_skill_md(path, sid, rel):
+    """Returns (findings, frontmatter values or None, key lines)."""
+    try:
+        text = path.read_bytes().decode("utf-8-sig")
+    except UnicodeDecodeError:
+        return [Finding("not-utf8", rel)], None, {}
+    try:
+        meta, where, dups = parse_frontmatter(text)
+    except _FrontmatterError as e:
+        return [Finding(e.code, rel, line=1)], None, {}
+    out = [Finding("duplicate-field", rel, f"field: {k}", n) for k, n in dups]
+    out += [Finding("missing-required", rel, f"field: {k}", where.get(k, 1))
+            for k in REQUIRED_FIELDS if not meta.get(k)]
+    name = meta.get("name")
+    if name and name != sid:
+        shown = name if len(name) <= 80 else name[:77] + "..."
+        out.append(Finding("name-mismatch", rel, f"name: {shown}, folder: {sid}", where["name"]))
+    missing = [k for k in RECOMMENDED_FIELDS if not meta.get(k)]
+    if missing:
+        out.append(Finding("recommended-missing", rel, ", ".join(missing), 1))
+    if EMAIL_RE.search(meta.get("owner", "")):
+        out.append(Finding("owner-email", rel, line=where["owner"]))
+    return out, meta, where
+
+
+def _version_of(skill_md):
+    try:
+        return parse_frontmatter(skill_md.read_bytes().decode("utf-8-sig"))[0].get("version", "")
+    except (OSError, UnicodeDecodeError, _FrontmatterError):
+        return ""
+
+
+def _check_skills(root, zips, trusted_root):
+    sd = root / SKILLS_DIR
+    if sd.is_symlink() or not sd.is_dir():
+        return [Finding("no-skills-dir", SKILLS_DIR + "/")], {}, []
+    findings, skills, placeholders = [], {}, []
+    for d in sorted(sd.iterdir()):
+        if d.is_symlink() or not d.is_dir():
+            continue  # links and loose files are reported by the tree scan
+        sid, base = d.name, f"{SKILLS_DIR}/{d.name}/"
+        files = _skill_files(d)
+        if all(r in PLACEHOLDER_FILES for r in files):
+            placeholders.append(base)
+            continue
+        skills[sid] = {"errors": 0, "warnings": 0}
+        out = []
+        if not ID_RE.match(sid):
+            out.append(Finding("bad-id", base))
+        top = os.listdir(d)
+        meta, where = None, {}
+        if "SKILL.md" in top and stat.S_ISREG(os.lstat(d / "SKILL.md").st_mode):
+            found, meta, where = _check_skill_md(d / "SKILL.md", sid, base + "SKILL.md")
+            out += found
+        elif "SKILL.md" not in top:
+            variant = next((n for n in sorted(top) if n.casefold() == "skill.md"), None)
+            nested = next((r for r in files if PurePosixPath(r).name.casefold() == "skill.md"), None)
+            if variant:
+                out.append(Finding("skill-md-case", base + variant))
+            else:
+                out.append(Finding("missing-skill-md", base, f"found {base}{nested}" if nested else ""))
+        seen, total = {}, 0
+        for r in files:
+            rel, size = base + r, os.lstat(d / r).st_size
+            if r.casefold() in seen:
+                out.append(Finding("case-collision", rel, f"also {base}{seen[r.casefold()]}"))
+            else:
+                seen[r.casefold()] = r
+            if rel not in zips and not _allowed_type(r):
+                out.append(Finding("file-type", rel, PurePosixPath(r).suffix.lower() or "no extension"))
+            if size > MAX_FILE_BYTES:
+                out.append(Finding("file-too-large", rel, f"{size} bytes"))
+            total += size
+        if len(files) > MAX_ENTRIES:
+            out.append(Finding("too-many-files", base, f"{len(files)} files"))
+        if total > MAX_TOTAL_BYTES:
+            out.append(Finding("skill-too-large", base, f"{total} bytes"))
+        version = (meta or {}).get("version", "")
+        trusted = Path(trusted_root) / SKILLS_DIR / sid if trusted_root else None
+        if (version and trusted and trusted.is_dir() and not trusted.is_symlink()
+                and _version_of(trusted / "SKILL.md") == version and _digest(trusted) != _digest(d)):
+            out.append(Finding("version-not-bumped", base + "SKILL.md", f"still {version}",
+                               where.get("version", 1)))
+        findings += out
+    return findings, skills, placeholders
+
+
+def check_repo(root, trusted_root=None):
+    """Run every folder check over the whole tree at `root`. `trusted_root` (a checkout of the base
+    branch) is only used to warn when a changed skill keeps the same version."""
+    root = Path(root)
+    tree, zips, count = _scan_tree(root)
+    found, skills, placeholders = _check_skills(root, zips, trusted_root)
+    findings = sorted(tree + found, key=lambda f: (f.level != "error", f.path, f.line, f.code))
+    for f in findings:
+        parts = f.path.split("/")
+        if parts[0] == SKILLS_DIR and len(parts) > 2 and parts[1] in skills:
+            skills[parts[1]][f.level + "s"] += 1
+    return Report(findings, skills, placeholders, count)
+
+
+def ci(root, trusted_root=None, reports_dir=None):
+    """The required check. `reports_dir` is accepted for old callers and ignored: the Skills
+    Auditor is paused and is not part of the required path."""
+    return check_repo(root, trusted_root)
+
+
+def _plural(n, word):
+    return f"{n} {word}{'' if n == 1 else 's'}"
+
+
+def _where(f):
+    return f"{f.path}:{f.line}" if f.line else f.path
+
+
+def format_text(rep):
+    names = ", ".join(sorted(rep.skills)) or "none"
+    out = [f"Skill check: scanned {_plural(rep.files_scanned, 'file')}; "
+           f"{_plural(len(rep.skills), 'skill folder')}: {names}."]
+    if rep.placeholders:
+        out.append(f"Ignored placeholder folders (only .gitkeep): {', '.join(rep.placeholders)}")
+    for f in rep.findings:
+        out.append(f"{f.level.upper()} {_where(f)}: {f.message}")
+        out.append(f"  How to fix: {f.fix}")
+    e, w = len(rep.errors), len(rep.warnings)
+    if e:
+        out.append(f"FAIL: {_plural(e, 'error')}, {_plural(w, 'warning')}. Each problem above says how to fix it.")
+    else:
+        out.append(f"CI OK: {_plural(len(rep.skills), 'skill')} checked, {_plural(w, 'warning')}.")
+    return "\n".join(out)
+
+
+def _esc_data(s):
+    return s.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+
+
+def _esc_prop(s):
+    return _esc_data(s).replace(":", "%3A").replace(",", "%2C")
+
+
+def format_annotations(rep):
+    """GitHub workflow commands, one per finding: ::error file=...,line=...::message"""
+    out = []
+    for f in rep.findings:
+        props = [f"file={_esc_prop(f.path.rstrip('/'))}"]
+        if f.line:
+            props.append(f"line={f.line}")
+        props.append(f"title={_esc_prop('Skill check ' + f.level)}")
+        out.append(f"::{f.level} {','.join(props)}::{_esc_data(f'{f.message}. How to fix: {f.fix}')}")
+    return out
+
+
+def _cell(s):
+    return s.replace("|", "\\|").replace("\r", " ").replace("\n", " ")
+
+
+def format_summary(rep):
+    """Markdown for $GITHUB_STEP_SUMMARY."""
+    e, w = len(rep.errors), len(rep.warnings)
+    out = [f"## Skill check: {'failed' if e else 'passed'}", "",
+           f"{_plural(e, 'error')}, {_plural(w, 'warning')}. Scanned {_plural(rep.files_scanned, 'file')} "
+           f"and {_plural(len(rep.skills), 'skill folder')}. Errors fail the check; warnings do not."]
+    if rep.findings:
+        out += ["", "| Level | Where | Problem | How to fix |", "|---|---|---|---|"]
+        out += [f"| {f.level} | `{_cell(_where(f)).replace('`', chr(39))}` | {_cell(f.message)} | {_cell(f.fix)} |"
+                for f in rep.findings]
+    if rep.skills:
+        out += ["", "| Skill | Result | Errors | Warnings |", "|---|---|---|---|"]
+        out += [f"| `{sid}` | {'fail' if c['errors'] else 'pass'} | {c['errors']} | {c['warnings']} |"
+                for sid, c in sorted(rep.skills.items())]
+    if rep.placeholders:
+        out += ["", "Ignored placeholder folders (only `.gitkeep`): "
+                + ", ".join(f"`{p}`" for p in rep.placeholders)]
+    return "\n".join(out) + "\n"
+
+
+def emit(rep, environ=None):
+    """Print the report; in GitHub Actions also emit annotations and append the job summary."""
+    environ = os.environ if environ is None else environ
+    print(format_text(rep))
+    if environ.get("GITHUB_ACTIONS") == "true":
+        for line in format_annotations(rep):
+            print(line)
+    summary = environ.get("GITHUB_STEP_SUMMARY")
+    if summary:
+        with open(summary, "a", encoding="utf-8") as fh:
+            fh.write(format_summary(rep))
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -341,9 +805,13 @@ def main(argv=None):
     for n in ("ci", "plan"):
         s = sub.add_parser(n)
         s.add_argument("--root", default=".")
-        s.add_argument("--trusted-root", help="checkout of the base branch (source of baseline + approved state)")
         if n == "ci":
-            s.add_argument("--auditor-reports", help="directory of <skill-id>.json from a trusted Auditor run")
+            s.add_argument("--trusted-root", help="checkout of the base branch; used only to warn when a "
+                           "changed skill keeps the same version")
+            s.add_argument("--auditor-reports", help="ignored: the Skills Auditor is paused and not part "
+                           "of the required check")
+        else:
+            s.add_argument("--trusted-root", help="checkout of the base branch (source of baseline + approved state)")
     a = ap.parse_args(argv)
     try:
         if a.cmd == "validate":
@@ -358,8 +826,12 @@ def main(argv=None):
         elif a.cmd == "plan":
             print(json.dumps(plan(a.root, a.trusted_root), indent=2))
         else:
-            st = ci(a.root, a.trusted_root, a.auditor_reports)
-            print(f"CI OK: {json.dumps(st, sort_keys=True)}")
+            if a.auditor_reports:
+                print("NOTICE: --auditor-reports is ignored. The Skills Auditor is paused and is not "
+                      "part of the required check.", file=sys.stderr)
+            rep = ci(a.root, a.trusted_root)
+            emit(rep)
+            return 1 if rep.errors else 0
     except PolicyBlock as e:
         print(f"POLICY BLOCK (expected until a trusted audit exists; not a broken workflow):\n{e}", file=sys.stderr)
         return 2
