@@ -1,4 +1,4 @@
-import contextlib, io, os, sys, tempfile, unittest
+import contextlib, csv, io, os, sys, tempfile, unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -329,6 +329,9 @@ class TestMain(Fixture):
         td = tempfile.TemporaryDirectory()
         self.addCleanup(td.cleanup)
         self.out = Path(td.name)
+        aux = tempfile.TemporaryDirectory()
+        self.addCleanup(aux.cleanup)
+        self.aux = Path(aux.name)
 
     def run_main(self, *extra, out=None):
         stdout, stderr = io.StringIO(), io.StringIO()
@@ -346,18 +349,49 @@ class TestMain(Fixture):
         code, out, err = self.run_main()
         self.assertEqual((code, err), (0, ""))
         self.assertEqual(sorted(os.listdir(self.out)), ["catalog.csv", "catalog.md"])
+        with open(self.out / "catalog.csv", newline="", encoding="utf-8-sig") as f:
+            self.assertEqual(next(csv.reader(f)), EXPECTED_COLUMNS)
         self.assertIn("Skills: 2", out)
         self.assertIn("fixture-alpha: complete", out)
         self.assertIn("fixture-min: missing version, owner, team, platforms, publication-status, "
                       "audience, glean-link, claude-link", out)
 
-    def test_flags_owner_fields_with_non_ahead_emails_only(self):
+    def test_lists_ids_of_owner_fields_with_emails_never_the_values(self):
         self.make_skill("fixture-a", doc("---", "name: fixture-a", "owner: Pat (pat@gmail.com), Lee (lee@ahead.com)", "---"))
         self.make_skill("fixture-b", doc("---", "name: fixture-b", "owner: Lee (lee@ahead.com), Sam (sam@corp.ahead.com)", "---"))
+        self.make_skill("fixture-c", doc("---", "name: fixture-c", "owner: Sam Smith", "---"))
+        _, out, err = self.run_main()
+        lines = out.splitlines()
+        self.assertIn("Owner fields containing an email address (skill ids only): fixture-a, fixture-b", lines)
+        self.assertIn("Owner fields with a non-AHEAD address (possible personal email; skill ids only): fixture-a", lines)
+        self.assertNotIn("@", out + err)
+
+    def test_no_email_lines_when_no_owner_has_an_email(self):
+        self.make_skill("fixture-c", doc("---", "name: fixture-c", "owner: Sam Smith", "---"))
         _, out, _ = self.run_main()
-        self.assertIn("fixture-a: pat@gmail.com", out)
-        self.assertNotIn("fixture-b: lee", out)
-        self.assertNotIn("fixture-b: sam", out)
+        self.assertNotIn("email address", out)
+        self.assertNotIn("non-AHEAD", out)
+
+    def test_nothing_is_written_outside_the_output_folder(self):
+        self.make_skill("fixture-alpha", FULL)
+        listing = self.aux / "published.csv"
+        listing.write_text("id\nfixture-delta\n")
+        cwd = tempfile.TemporaryDirectory()
+        self.addCleanup(cwd.cleanup)
+
+        def snapshot(base):
+            return sorted(str(p.relative_to(base)) for p in Path(base).rglob("*"))
+
+        before = (snapshot(self.root), snapshot(self.aux))
+        previous = os.getcwd()
+        os.chdir(cwd.name)
+        self.addCleanup(os.chdir, previous)
+        code, _, _ = self.run_main("--published-list", str(listing))
+        self.assertEqual(code, 0)
+        self.assertEqual((snapshot(self.root), snapshot(self.aux)), before)
+        self.assertEqual(os.listdir(cwd.name), [])
+        self.assertEqual(sorted(os.listdir(self.out)),
+                         ["catalog.csv", "catalog.md", "published-not-in-github.csv"])
 
     def test_skipped_skills_are_reported_in_the_output(self):
         outside = self.root / "outside.md"
@@ -373,8 +407,7 @@ class TestMain(Fixture):
 
     def test_published_list_adds_the_sheet_and_reports_its_count(self):
         self.make_skill("fixture-alpha", FULL)
-        listing = self.out.parent / (self.out.name + "-published.csv")
-        self.addCleanup(lambda: listing.unlink(missing_ok=True))
+        listing = self.aux / "published.csv"
         listing.write_text("id\nfixture-alpha\nfixture-delta\n")
         code, out, _ = self.run_main("--published-list", str(listing))
         self.assertEqual(code, 0)
@@ -383,8 +416,7 @@ class TestMain(Fixture):
 
     def test_bad_published_list_is_an_error_and_writes_nothing(self):
         self.make_skill("fixture-alpha", FULL)
-        listing = self.out.parent / (self.out.name + "-bad.csv")
-        self.addCleanup(lambda: listing.unlink(missing_ok=True))
+        listing = self.aux / "bad.csv"
         listing.write_text("skill\nfixture-alpha\n")
         code, out, err = self.run_main("--published-list", str(listing))
         self.assertEqual(code, 2)

@@ -270,11 +270,14 @@ def main(argv=None):
         print("Warnings:")
         for w in warnings:
             print(f"  {w}")
-    flagged = [(r["id"], non_ahead_emails(r["owner"])) for r in rows if non_ahead_emails(r["owner"])]
-    if flagged:
-        print("Owner fields with non-AHEAD emails (possible personal email):")
-        for sid, emails in flagged:
-            print(f"  {sid}: {', '.join(emails)}")
+    # Skill ids only: owner values (names, emails) are personal data and are never printed.
+    with_email = [r["id"] for r in rows if EMAIL_RE.search(r["owner"])]
+    if with_email:
+        print("Owner fields containing an email address (skill ids only): " + ", ".join(with_email))
+    personal = [r["id"] for r in rows if non_ahead_emails(r["owner"])]
+    if personal:
+        print("Owner fields with a non-AHEAD address (possible personal email; skill ids only): "
+              + ", ".join(personal))
     if published is not None:
         print(f"Published but not in GitHub: {len(published[1])}")
     print("Wrote:")
