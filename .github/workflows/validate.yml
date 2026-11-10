@@ -1,19 +1,20 @@
-# Deterministic package validation for Platform-Skills (public repository).
+# Skill check for Platform-Skills (public repository).
 #
-# - Trigger: pull_request (NOT pull_request_target). Token is read-only, no secrets are used, and
-#   the PR's content is treated as data. Nothing is published, merged or written back.
-#   No paths filter: a required check that is skipped by a filter would never report.
+# - Trigger: pull_request (NOT pull_request_target). The token is read-only (contents: read), no
+#   secrets are used, the PR's content is treated as data, and nothing is published, merged,
+#   written back or approved by this workflow. No paths filter: a required check that a filter
+#   skips would never report.
 # - Two jobs so a reviewer can tell them apart:
-#     unit-tests         fails  => the tooling is broken (fix the code)
-#     skill-policy-gate  exit 2 => POLICY BLOCK: a ZIP lacks a trusted Skills Auditor result.
-#                                  Expected until the Auditor is integrated; not a broken workflow.
-#                        exit 1 => invalid, unsafe or tampered package/projection.
-# - The gate runs the BASE branch's copy of tools/skillpkg.py against the PR's files and reads seed
-#   baselines / approved state only from the base branch, so a PR cannot authorise itself by
-#   editing the tool, skills/baseline-hashes.json, audits/ or provenance/.
-#   Residual risk: a PR can still edit THIS file. Mitigation is CODEOWNERS review of .github/**
-#   plus branch protection (docs/GOVERNANCE.md), not anything a workflow can enforce on itself.
-# - Skills Auditor: NOT integrated (docs/AUDITOR-CONTRACT.md). No audit result is fabricated.
+#     unit-tests         fails => the tooling itself is broken (fix tools/ or tests/).
+#     skill-policy-gate  fails => something in the tree breaks the contribution rules. Every
+#                        problem is listed in the job summary and as an annotation on the file,
+#                        each with how to fix it. Warnings never fail the check.
+# - The check runs the BASE branch's copy of tools/skillpkg.py against the PR's files, so a PR
+#   cannot pass itself by editing the tool. It scans the whole tree, never only the changed paths.
+#   Residual risk: a PR can still edit THIS file. Mitigation is code-owner review of .github/**
+#   plus branch protection, not anything a workflow can enforce on itself.
+# - Approval is a human code-owner review of the PR. The Skills Auditor is paused and is not part
+#   of this check.
 name: validate-skills
 
 on:
@@ -35,7 +36,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Unit tests
-        run: python3 -I -m unittest discover -s tests -v
+        run: python3 -I -B -m unittest discover -s tests -v
 
   skill-policy-gate:
     runs-on: ubuntu-latest
@@ -49,12 +50,12 @@ jobs:
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: git worktree add --detach "$RUNNER_TEMP/base" "$BASE_SHA"
-      - name: Policy gate (trusted tool, trusted baseline)
+      - name: Skill check (base branch tool, whole tree)
+        # The tool writes annotations and the job summary itself (GITHUB_ACTIONS, GITHUB_STEP_SUMMARY).
         run: |
           TOOL="$RUNNER_TEMP/base/tools/skillpkg.py"
           if [ ! -f "$TOOL" ]; then
             echo "::warning::Bootstrap: base branch has no tools/skillpkg.py; using the PR's copy. Review tools/ changes manually."
             TOOL=tools/skillpkg.py
           fi
-          python3 -I "$TOOL" plan --root . --trusted-root "$RUNNER_TEMP/base"
           python3 -I "$TOOL" ci --root . --trusted-root "$RUNNER_TEMP/base"

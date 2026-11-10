@@ -1,0 +1,15 @@
+{
+  "description": "A valid skill folder plus a ZIP export next to it.",
+  "note": "Inert description of a repository tree. tests/test_skillpkg.py builds it in a temporary folder. Fixtures are stored this way because the check scans the whole tree: a real ZIP, symlink or misplaced SKILL.md under tests/ would fail the check on this repository itself.",
+  "files": {
+    "skills/README.md": "# Skills\n",
+    "skills/demo-skill/SKILL.md": "---\nname: demo-skill\ndescription: Demo skill for the check's own tests. Use it only in tests.\nversion: 1.0.0\nowner: platform-skills-maintainers\nteam: Platform\nahead-platform: [Claude, Glean]\naudience: Internal\npublication-status: Draft\nglean-link: https://example.invalid/glean/demo-skill\nclaude-link: https://example.invalid/claude/demo-skill\n---\n# Demo skill\n",
+    "skills/demo-skill/references/notes.md": "Notes.\n",
+    "skills/demo-skill/scripts/run.py": "print('demo')\n"
+  },
+  "zips": {
+    "skills/demo-skill.zip": {
+      "SKILL.md": "---\nname: demo-skill\ndescription: Demo skill for the check's own tests. Use it only in tests.\nversion: 1.0.0\nowner: platform-skills-maintainers\nteam: Platform\nahead-platform: [Claude, Glean]\naudience: Internal\npublication-status: Draft\nglean-link: https://example.invalid/glean/demo-skill\nclaude-link: https://example.invalid/claude/demo-skill\n---\n# Demo skill\n"
+    }
+  }
+}
