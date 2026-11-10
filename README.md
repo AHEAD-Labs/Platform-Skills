@@ -104,7 +104,7 @@ FAIL: 1 error, 1 warning. Each problem above says how to fix it.
 - An **ERROR** fails the check. Fix it, commit, and push again; the checks re-run on the pull request.
 - A **WARNING** does not fail the check. Fix it when you can.
 - The report also lists warnings for skills that are already in the repository, so a good new skill can still print several. Errors come first, and the line that starts `CI OK` or `FAIL` is the result. Look for lines that name your own folder, `skills/<id>/`.
-- On a pull request the same messages appear in the check's log and summary. The warning that a skill's version was not increased appears only there, because it compares your skill with what is on `main`; the local command above cannot show it.
+- On a pull request the same messages are printed in the check's log, and when the tool runs in GitHub Actions it also writes a job summary and file annotations. The warning that a skill's version was not increased appears only on the pull request check, because it compares your skill with what is on `main`; the local command above cannot show it.
 
 <details>
 <summary>Every message, and how to fix it</summary>
