@@ -331,6 +331,11 @@ class TestGapReport(Fixture):
         self.assertIn("id", str(ctx.exception))
         self.assertIn("name", str(ctx.exception))
 
+    def test_csv_the_parser_rejects_is_a_value_error_not_a_csv_error(self):
+        with self.assertRaises(ValueError) as ctx:
+            self.gap("id,notes\nfixture-alpha," + "x" * 200000 + "\n")
+        self.assertIn("published list", str(ctx.exception))
+
     def test_markdown_gets_the_gap_sections_only_when_asked(self):
         self.assertNotIn("Published but not in GitHub", catalog.render_markdown(self.rows()))
         md = catalog.render_markdown(self.rows(), self.gap())
@@ -478,6 +483,16 @@ class TestMain(Fixture):
         code, out, err = self.run_main("--published-list", str(listing))
         self.assertEqual(code, 2)
         self.assertIn("'id' or 'name'", err)
+        self.assertEqual(os.listdir(self.out), [])
+
+    def test_unparseable_published_list_is_a_clean_error_and_writes_nothing(self):
+        self.make_skill("fixture-alpha", FULL)
+        listing = self.aux / "huge.csv"
+        listing.write_text("id,notes\nfixture-alpha," + "x" * 200000 + "\n")
+        code, out, err = self.run_main("--published-list", str(listing))
+        self.assertEqual(code, 2)
+        self.assertIn("published list", err)
+        self.assertNotIn("Traceback", err)
         self.assertEqual(os.listdir(self.out), [])
 
     def test_refuses_to_write_inside_the_repo(self):

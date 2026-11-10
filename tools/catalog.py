@@ -217,15 +217,18 @@ def compare_published(rows, path):
                       only by case-insensitive hyphens, underscores or spaces. They are never
                       treated as matches, and are left out of published_only and github_only.
     """
-    with open(path, newline="", encoding="utf-8-sig") as f:
-        reader = csv.DictReader(f)
-        columns = reader.fieldnames or []
-        key = next((c for want in ("id", "name") for c in columns if c.strip().lower() == want), None)
-        if key is None:
-            raise ValueError("published list needs an 'id' or 'name' column; found: "
-                             + (", ".join(columns) or "no header"))
-        entries = [{c: r.get(c) or "" for c in columns} for r in reader
-                   if any(isinstance(v, str) and v.strip() for v in r.values())]
+    try:
+        with open(path, newline="", encoding="utf-8-sig") as f:
+            reader = csv.DictReader(f)
+            columns = reader.fieldnames or []
+            key = next((c for want in ("id", "name") for c in columns if c.strip().lower() == want), None)
+            if key is None:
+                raise ValueError("published list needs an 'id' or 'name' column; found: "
+                                 + (", ".join(columns) or "no header"))
+            entries = [{c: r.get(c) or "" for c in columns} for r in reader
+                       if any(isinstance(v, str) and v.strip() for v in r.values())]
+    except csv.Error as e:
+        raise ValueError(f"published list is not readable as CSV: {e}") from e
     listed = {e[key].strip().lower() for e in entries if e[key].strip()}
     known = {v.strip().lower() for r in rows for v in (r["id"], r["name"]) if v.strip()}
     by_norm = {}
