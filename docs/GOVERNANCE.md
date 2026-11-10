@@ -13,17 +13,20 @@ Code owners are defined in [`.github/CODEOWNERS`](../.github/CODEOWNERS). They m
 
 ## What the automated checks guard
 
-CI runs the copy of the checking tool that is on `main`, against the pull request's files. A pull request therefore cannot change the rules that judge it. The table lists what each control is for. For the exact behaviour, read `tools/` and `tests/`.
+CI runs the copy of the checking tool that is on `main`, against the pull request's files. A pull request therefore cannot change the rules that judge it. The table says where each check runs: across the **whole repository** (everything except `.git`), or in **each skill folder** (every folder directly under `skills/`). For the exact behaviour, read `tools/` and `tests/`.
 
-| Contributor attempt | Intended result | Control |
+| Contributor attempt | Intended result | Where it is checked |
 | --- | --- | --- |
-| Edit the checking tool so a change passes | The edit is ignored for that pull request | CI runs the base-branch copy of the tool |
-| Hide a file with a path that escapes the tree (traversal, absolute path, case-only duplicate) | Fails | Whole-tree scan with path safety |
-| Commit a symlink to redirect reads or writes | Fails | Symlinks are rejected anywhere in the tree |
-| Commit a file type that is not on the allowed list, or a file over the size limit | Fails | File-type allowlist and size limits |
-| Commit a skill folder without `SKILL.md` at its root, or whose `name` differs from the folder name | Fails | Skill folder check |
-| Weaken the checks by editing `.github/workflows/` | Possible: a workflow can be edited in the same pull request | Code-owner review of every change, enforced by the ruleset below |
-| Approve or merge your own change | Blocked only when the repository settings below are applied | Ruleset on `main` |
+| Edit the checking tool so a change passes | The edit is ignored for that pull request, because CI runs the copy of the tool that is on `main` | CI |
+| Use an unsafe file or folder name (backslash, control character or drive letter) | Fails | Whole repository |
+| Commit a symbolic link | Fails | Whole repository |
+| Commit a ZIP file, whether or not it is named `.zip` | Fails | Whole repository |
+| Put a `SKILL.md` anywhere other than `skills/<id>/SKILL.md`, or leave a loose file directly in `skills/` | Fails | Whole repository |
+| Use a folder name that is not a valid skill id, leave out `SKILL.md` or the required frontmatter, or give `name` a value that differs from the folder name | Fails | Each skill folder |
+| Commit a file type that is not allowed, a file over the size limit, a skill folder over the size or file-count limit, or two names that differ only in upper/lower case | Fails | Each skill folder |
+| Change a skill without raising its `version` | Warning only | Each skill folder, on pull requests only (it compares with `main`) |
+| Weaken the checks by editing `.github/workflows/` | Possible: a workflow can be edited in the same pull request | Not a check. Needs code-owner review, which the ruleset below requires once applied |
+| Approve or merge your own change | Blocked only when the repository settings below are applied | Not a check. The ruleset on `main` |
 
 ## Required repository settings
 
