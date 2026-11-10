@@ -19,6 +19,9 @@ FRONTMATTER_KEYS = {"name": "name", "description": "description", "version": "ve
 MAX_READ_BYTES = 256 * 1024
 MD_DESCRIPTION_MAX = 200
 NO_AUDIENCE = "No audience set"
+POSSIBLE_COLUMNS = ["published entry", "skill id", "skill name", "why"]
+POSSIBLE_WHY = "same after ignoring case, hyphens, underscores and spaces"
+SEPARATORS_RE = re.compile(r"[\s_-]+")
 AUDIENCE_COLUMNS = ["id", "description", "version", "platforms", "publication-status", "source path"]
 AUDIENCE_SPLIT_RE = re.compile(r"[;,]")
 
@@ -197,13 +200,23 @@ def _md_table(columns, rows, limits=None):
     return lines
 
 
-def published_not_in_github(rows, path):
-    """Read a published-skills CSV and return (columns, rows not matching any catalog skill).
+def _norm(value):
+    return SEPARATORS_RE.sub("", value.lower())
 
-    The list needs an `id` or `name` column (header case ignored); it is matched, case- and
-    whitespace-insensitively, against each catalog skill's folder id and frontmatter name.
+
+def compare_published(rows, path):
+    """Compare a published-skills CSV with the catalog, in both directions.
+
+    The list needs an `id` or `name` column (header case ignored). Each entry is matched,
+    ignoring case and surrounding whitespace, against each skill's folder id and frontmatter
+    name. Returns a dict:
+      columns         the list's own columns
+      published_only  list entries with no matching folder (rows keep the list's columns)
+      github_only     catalog rows whose id and name are not on the list
+      possible        near-misses, listed apart: an entry that differs from a folder id or name
+                      only by case-insensitive hyphens, underscores or spaces. They are never
+                      treated as matches, and are left out of published_only and github_only.
     """
-    known = {v.strip().lower() for r in rows for v in (r["id"], r["name"]) if v.strip()}
     with open(path, newline="", encoding="utf-8-sig") as f:
         reader = csv.DictReader(f)
         columns = reader.fieldnames or []
@@ -211,22 +224,49 @@ def published_not_in_github(rows, path):
         if key is None:
             raise ValueError("published list needs an 'id' or 'name' column; found: "
                              + (", ".join(columns) or "no header"))
-        missing = [{c: r.get(c) or "" for c in columns} for r in reader
-                   if any(isinstance(v, str) and v.strip() for v in r.values())
-                   and (r.get(key) or "").strip().lower() not in known]
-    return columns, missing
+        entries = [{c: r.get(c) or "" for c in columns} for r in reader
+                   if any(isinstance(v, str) and v.strip() for v in r.values())]
+    listed = {e[key].strip().lower() for e in entries if e[key].strip()}
+    known = {v.strip().lower() for r in rows for v in (r["id"], r["name"]) if v.strip()}
+    by_norm = {}
+    for r in rows:
+        for v in (r["id"], r["name"]):
+            if v.strip():
+                by_norm.setdefault(_norm(v), {})[r["id"]] = r
+    published_only, possible = [], []
+    for e in entries:
+        text = e[key].strip()
+        if text.lower() in known:
+            continue
+        near = by_norm.get(_norm(text), {}) if _norm(text) else {}
+        if near:
+            possible += [{"published entry": text, "skill id": r["id"], "skill name": r["name"],
+                          "why": POSSIBLE_WHY} for r in near.values()]
+        else:
+            published_only.append(e)
+    near_ids = {p["skill id"] for p in possible}
+    github_only = [r for r in rows if r["id"] not in near_ids
+                   and r["id"].strip().lower() not in listed and r["name"].strip().lower() not in listed]
+    return {"columns": columns, "published_only": published_only,
+            "github_only": github_only, "possible": possible}
 
 
-def render_markdown(rows, published=None):
+def render_markdown(rows, gap=None):
     n = len(rows)
     lines = ["# Skills catalog", "",
              f"{n} skill{'s' if n != 1 else ''}, generated from `skills/*/SKILL.md` frontmatter. "
              f"Descriptions are shortened here; the CSV has the full text.", ""]
     lines += _md_table(COLUMNS, rows, {"description": MD_DESCRIPTION_MAX})
-    if published is not None:
-        columns, missing = published
+    if gap is not None:
         lines += ["", "## Published but not in GitHub", ""]
-        lines += _md_table(columns, missing) if missing else ["None: every skill in the published list is in GitHub."]
+        lines += (_md_table(gap["columns"], gap["published_only"]) if gap["published_only"]
+                  else ["None: every skill on the published list is in GitHub."])
+        lines += ["", "## In GitHub but not on the published list", ""]
+        lines += (_md_table(COLUMNS, gap["github_only"], {"description": MD_DESCRIPTION_MAX})
+                  if gap["github_only"] else ["None: every skill in GitHub is on the published list."])
+        lines += ["", "## Possible matches, check by hand", ""]
+        lines += (["Not counted as matches in either list above.", ""] + _md_table(POSSIBLE_COLUMNS, gap["possible"])
+                  if gap["possible"] else ["None: no near-misses."])
     return "\n".join(lines) + "\n"
 
 
@@ -273,18 +313,22 @@ def render_audience_markdown(rows):
     return "\n".join(lines).rstrip("\n") + "\n"
 
 
-def write_outputs(out_dir, rows, published=None):
-    """Write catalog.csv, catalog.md and catalog-by-audience.md (plus published-not-in-github.csv
-    when given) to out_dir."""
+def write_outputs(out_dir, rows, gap=None):
+    """Write catalog.csv, catalog.md and catalog-by-audience.md to out_dir, plus the three
+    gap-report CSVs (published-not-in-github, github-not-published, possible-matches) when a
+    gap report is given."""
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     paths = [out / "catalog.csv", out / "catalog.md", out / "catalog-by-audience.md"]
     write_csv(paths[0], COLUMNS, rows)
-    paths[1].write_text(render_markdown(rows, published), encoding="utf-8")
+    paths[1].write_text(render_markdown(rows, gap), encoding="utf-8")
     paths[2].write_text(render_audience_markdown(rows), encoding="utf-8")
-    if published is not None:
-        paths.append(out / "published-not-in-github.csv")
-        write_csv(paths[3], published[0], published[1])
+    if gap is not None:
+        for name, columns, data in (("published-not-in-github.csv", gap["columns"], gap["published_only"]),
+                                    ("github-not-published.csv", COLUMNS, gap["github_only"]),
+                                    ("possible-matches.csv", POSSIBLE_COLUMNS, gap["possible"])):
+            paths.append(out / name)
+            write_csv(paths[-1], columns, data)
     return paths
 
 
@@ -326,8 +370,11 @@ def build_parser():
     parser.add_argument("--out", default="/tmp", help="folder for the output files (default: /tmp)")
     parser.add_argument("--published-list", metavar="CSV",
                         help="CSV of skills published elsewhere. Needs a header row with an id or name "
-                             "column (any case); other columns are kept as they are. Matched against each "
-                             "skill's folder id and frontmatter name. Adds a 'published but not in GitHub' sheet")
+                             "column (any case); other columns are kept as they are. Matched, ignoring case, "
+                             "against each skill's folder id and frontmatter name. Writes a gap report in both "
+                             "directions (published but not in GitHub; in GitHub but not on the list) plus "
+                             "possible matches to check by hand (same after ignoring hyphens, underscores and "
+                             "spaces; never counted as matches)")
     return parser
 
 
@@ -344,14 +391,14 @@ def main(argv=None):
               f"and must not be committed. Choose a folder outside the tree.", file=sys.stderr)
         return 2
     rows, warnings = collect(skills_dir, root)
-    published = None
+    gap = None
     if args.published_list:
         try:
-            published = published_not_in_github(rows, args.published_list)
+            gap = compare_published(rows, args.published_list)
         except (OSError, ValueError) as e:
             print(f"error: {e}", file=sys.stderr)
             return 2
-    paths = write_outputs(out, rows, published)
+    paths = write_outputs(out, rows, gap)
 
     print(f"Skills: {len(rows)}")
     print("Missing fields per skill:")
@@ -373,8 +420,10 @@ def main(argv=None):
     print("Audience view: " + (", ".join(audience_summary(rows)) or "no skills"))
     if rows and not any(_audiences(r) for r in rows):
         print(f'All {len(rows)} skills are under "{NO_AUDIENCE}": none declares an audience.')
-    if published is not None:
-        print(f"Published but not in GitHub: {len(published[1])}")
+    if gap is not None:
+        print(f"Published but not in GitHub: {len(gap['published_only'])}")
+        print(f"In GitHub but not on the published list: {len(gap['github_only'])}")
+        print(f"Possible matches (check by hand): {len(gap['possible'])}")
     print("Wrote:")
     for p in paths:
         print(f"  {p}")

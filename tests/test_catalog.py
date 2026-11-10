@@ -6,6 +6,8 @@ sys.path.insert(0, str(ROOT / "tools"))
 import catalog  # noqa: E402
 
 OUTPUT_FILES = ["catalog-by-audience.md", "catalog.csv", "catalog.md"]
+PUBLISHED_FILES = ["github-not-published.csv", "possible-matches.csv", "published-not-in-github.csv"]
+ALL_FILES = sorted(OUTPUT_FILES + PUBLISHED_FILES)
 EXPECTED_COLUMNS = ["id", "name", "description", "version", "owner", "team", "platforms",
                     "publication-status", "audience", "source path", "glean-link", "claude-link"]
 
@@ -254,77 +256,114 @@ class TestWriters(Fixture):
         self.assertTrue(line.endswith("|  |  |"))
 
 
-class TestPublishedList(Fixture):
+class TestGapReport(Fixture):
+    """compare_published: published-vs-GitHub in both directions, near-misses kept apart."""
+
     def published(self, text, encoding="utf-8"):
         path = self.root / "published.csv"
         path.write_bytes(text.encode(encoding))
         return path
 
     def rows(self):
-        return [sample_row(id="fixture-alpha", name="fixture-alpha"),
-                sample_row(id="fixture-gamma", name="Gamma Display Name")]
+        return [sample_row(id="fixture-alpha", name="fixture-alpha"),         # exact id match
+                sample_row(id="fixture-beta", name="fixture-beta"),           # case-only match
+                sample_row(id="fixture-gamma", name="Gamma Display Name"),    # matched by frontmatter name
+                sample_row(id="fixture-delta", name="fixture-delta"),         # in GitHub, not on the list
+                sample_row(id="fixture-sigma", name="fixture-sigma")]         # near-miss target
 
-    def test_lists_only_published_skills_missing_from_github_and_keeps_their_columns(self):
-        path = self.published("id,owner,notes\nfixture-alpha,A,x\n  FIXTURE-GAMMA ,G,y\nfixture-delta,D,z\n")
-        columns, missing = catalog.published_not_in_github(self.rows(), path)
-        self.assertEqual(columns, ["id", "owner", "notes"])
-        self.assertEqual(missing, [{"id": "fixture-delta", "owner": "D", "notes": "z"}])
+    LIST = ("id,owner,notes\n"
+            "fixture-alpha,A,1\n"
+            "  FIXTURE-BETA ,B,2\n"
+            "gamma display name,G,3\n"
+            "fixture-omega,O,4\n"
+            "fixturesigma,S,5\n")
+
+    def gap(self, text=None, **kw):
+        return catalog.compare_published(self.rows(), self.published(text or self.LIST, **kw))
+
+    def test_published_but_not_in_github_keeps_the_lists_own_columns(self):
+        gap = self.gap()
+        self.assertEqual(gap["columns"], ["id", "owner", "notes"])
+        self.assertEqual(gap["published_only"], [{"id": "fixture-omega", "owner": "O", "notes": "4"}])
+
+    def test_in_github_but_not_on_the_list(self):
+        self.assertEqual([r["id"] for r in self.gap()["github_only"]], ["fixture-delta"])
+
+    def test_exact_case_only_and_name_matches_are_matched_in_both_directions(self):
+        gap = self.gap()
+        listed = [r["id"] for r in gap["published_only"]]
+        self.assertNotIn("fixture-alpha", listed)
+        self.assertNotIn("FIXTURE-BETA", listed)
+        self.assertNotIn("gamma display name", listed)
+        self.assertEqual({"fixture-alpha", "fixture-beta", "fixture-gamma"} & {r["id"] for r in gap["github_only"]}, set())
+
+    def test_near_miss_is_listed_separately_and_never_treated_as_a_match(self):
+        gap = self.gap()
+        self.assertEqual(gap["possible"], [{"published entry": "fixturesigma", "skill id": "fixture-sigma",
+                                            "skill name": "fixture-sigma", "why": catalog.POSSIBLE_WHY}])
+        self.assertNotIn("fixturesigma", [r["id"] for r in gap["published_only"]])
+        self.assertNotIn("fixture-sigma", [r["id"] for r in gap["github_only"]])
+
+    def test_near_miss_also_covers_underscores_and_spaces(self):
+        gap = self.gap("id\nFixture_Sigma\nfixture sigma\n")
+        self.assertEqual([p["published entry"] for p in gap["possible"]], ["Fixture_Sigma", "fixture sigma"])
+        self.assertEqual(gap["published_only"], [])
 
     def test_name_column_is_enough_and_header_case_is_ignored(self):
-        path = self.published("Name,Team\nfixture-alpha,A\nFixture-Epsilon,E\n")
-        columns, missing = catalog.published_not_in_github(self.rows(), path)
-        self.assertEqual(columns, ["Name", "Team"])
-        self.assertEqual(missing, [{"Name": "Fixture-Epsilon", "Team": "E"}])
+        gap = self.gap("Name,Team\nfixture-alpha,A\nFixture-Epsilon,E\n")
+        self.assertEqual(gap["columns"], ["Name", "Team"])
+        self.assertEqual(gap["published_only"], [{"Name": "Fixture-Epsilon", "Team": "E"}])
 
-    def test_matches_the_frontmatter_name_as_well_as_the_folder_id(self):
-        path = self.published("name\ngamma display name\n")
-        _, missing = catalog.published_not_in_github(self.rows(), path)
-        self.assertEqual(missing, [])
+    def test_excel_bom_and_trailing_blank_rows_are_handled(self):
+        gap = self.gap("id\nfixture-alpha\nfixture-zeta\n,\n,\n", encoding="utf-8-sig")
+        self.assertEqual(gap["columns"], ["id"])
+        self.assertEqual(gap["published_only"], [{"id": "fixture-zeta"}])
 
-    def test_excel_bom_is_handled(self):
-        path = self.published("id\nfixture-alpha\nfixture-zeta\n", encoding="utf-8-sig")
-        columns, missing = catalog.published_not_in_github(self.rows(), path)
-        self.assertEqual(columns, ["id"])
-        self.assertEqual(missing, [{"id": "fixture-zeta"}])
+    def test_header_only_list_means_every_skill_is_in_github_only(self):
+        gap = self.gap("id,owner\n")
+        self.assertEqual(gap["published_only"], [])
+        self.assertEqual(len(gap["github_only"]), 5)
+        self.assertEqual(gap["possible"], [])
 
     def test_list_without_id_or_name_column_fails_loudly(self):
-        path = self.published("skill,owner\nfixture-alpha,A\n")
         with self.assertRaises(ValueError) as ctx:
-            catalog.published_not_in_github(self.rows(), path)
+            self.gap("skill,owner\nfixture-alpha,A\n")
         self.assertIn("id", str(ctx.exception))
         self.assertIn("name", str(ctx.exception))
 
-    def test_trailing_blank_rows_from_excel_are_ignored(self):
-        path = self.published("id,owner\nfixture-delta,D\n,\n,\n")
-        _, missing = catalog.published_not_in_github(self.rows(), path)
-        self.assertEqual(missing, [{"id": "fixture-delta", "owner": "D"}])
+    def test_markdown_gets_the_gap_sections_only_when_asked(self):
+        self.assertNotIn("Published but not in GitHub", catalog.render_markdown(self.rows()))
+        md = catalog.render_markdown(self.rows(), self.gap())
+        headings = [l for l in md.splitlines() if l.startswith("## ")]
+        self.assertEqual(headings, ["## Published but not in GitHub", "## In GitHub but not on the published list",
+                                    "## Possible matches, check by hand"])
+        sections = md.split("\n## ")[1:]
+        self.assertIn("| fixture-omega | O | 4 |", sections[0])
+        self.assertIn("| fixture-delta |", sections[1])
+        self.assertNotIn("| fixture-alpha |", sections[1])  # the id cell, not the fixture's source path
+        self.assertIn("| fixturesigma | fixture-sigma | fixture-sigma |", sections[2])
 
-    def test_markdown_gets_a_published_section_only_when_asked(self):
-        plain = catalog.render_markdown(self.rows())
-        self.assertNotIn("Published but not in GitHub", plain)
-        md = catalog.render_markdown(self.rows(), (["id", "owner"], [{"id": "fixture-delta", "owner": "D"}]))
-        self.assertIn("## Published but not in GitHub", md)
-        self.assertIn("| fixture-delta | D |", md)
-
-    def test_markdown_says_so_when_nothing_is_missing(self):
-        md = catalog.render_markdown(self.rows(), (["id"], []))
-        self.assertIn("## Published but not in GitHub", md)
-        self.assertIn("None", md)
+    def test_markdown_says_so_when_a_section_is_empty(self):
+        md = catalog.render_markdown(self.rows(), self.gap("id\n" + "\n".join(r["id"] for r in self.rows()) + "\n"))
+        self.assertEqual(md.count("None"), 3)
 
 
 class TestWriteOutputs(Fixture):
-    def test_writes_exactly_catalog_csv_and_md_and_creates_the_folder(self):
+    def test_writes_exactly_the_three_catalog_files_and_creates_the_folder(self):
         out = self.root / "does" / "not" / "exist"
         paths = catalog.write_outputs(out, [sample_row()])
         self.assertEqual(sorted(p.name for p in paths), OUTPUT_FILES)
         self.assertEqual(sorted(os.listdir(out)), OUTPUT_FILES)
 
-    def test_published_sheet_is_written_as_its_own_csv_even_when_empty(self):
+    def test_gap_report_adds_three_csvs_even_when_empty(self):
         out = self.root / "out"
-        paths = catalog.write_outputs(out, [sample_row()], (["id", "owner"], []))
-        self.assertEqual(sorted(p.name for p in paths), OUTPUT_FILES + ["published-not-in-github.csv"])
-        text = (out / "published-not-in-github.csv").read_text(encoding="utf-8-sig")
-        self.assertEqual(text.strip(), "id,owner")
+        gap = {"columns": ["id", "owner"], "published_only": [], "github_only": [], "possible": []}
+        paths = catalog.write_outputs(out, [sample_row()], gap)
+        self.assertEqual(sorted(p.name for p in paths), ALL_FILES)
+        read = lambda name: (out / name).read_text(encoding="utf-8-sig").strip()
+        self.assertEqual(read("published-not-in-github.csv"), "id,owner")
+        self.assertEqual(read("github-not-published.csv"), ",".join(catalog.COLUMNS))
+        self.assertEqual(read("possible-matches.csv"), ",".join(catalog.POSSIBLE_COLUMNS))
 
 
 class TestMain(Fixture):
@@ -394,7 +433,7 @@ class TestMain(Fixture):
         self.assertEqual(code, 0)
         self.assertEqual((snapshot(self.root), snapshot(self.aux)), before)
         self.assertEqual(os.listdir(cwd.name), [])
-        self.assertEqual(sorted(os.listdir(self.out)), OUTPUT_FILES + ["published-not-in-github.csv"])
+        self.assertEqual(sorted(os.listdir(self.out)), ALL_FILES)
 
     def test_skipped_skills_are_reported_in_the_output(self):
         outside = self.root / "outside.md"
@@ -414,8 +453,23 @@ class TestMain(Fixture):
         listing.write_text("id\nfixture-alpha\nfixture-delta\n")
         code, out, _ = self.run_main("--published-list", str(listing))
         self.assertEqual(code, 0)
-        self.assertEqual(sorted(os.listdir(self.out)), OUTPUT_FILES + ["published-not-in-github.csv"])
+        self.assertEqual(sorted(os.listdir(self.out)), ALL_FILES)
         self.assertIn("Published but not in GitHub: 1", out)
+        self.assertIn("In GitHub but not on the published list: 0", out)
+        self.assertIn("Possible matches (check by hand): 0", out)
+
+    def test_gap_counts_for_both_directions_and_near_misses_are_in_the_run_summary(self):
+        for sid in ("fixture-alpha", "fixture-delta", "fixture-sigma"):
+            self.make_skill(sid, doc("---", f"name: {sid}", "description: d", "---"))
+        listing = self.aux / "published.csv"
+        listing.write_text("id\nFIXTURE-ALPHA\nfixture-omega\nfixturesigma\nfixture-zeta\n")
+        code, out, _ = self.run_main("--published-list", str(listing))
+        self.assertEqual(code, 0)
+        self.assertIn("Published but not in GitHub: 2", out)
+        self.assertIn("In GitHub but not on the published list: 1", out)
+        self.assertIn("Possible matches (check by hand): 1", out)
+        md = (self.out / "catalog.md").read_text(encoding="utf-8")
+        self.assertIn("## In GitHub but not on the published list", md)
 
     def test_bad_published_list_is_an_error_and_writes_nothing(self):
         self.make_skill("fixture-alpha", FULL)
@@ -460,6 +514,8 @@ class TestMain(Fixture):
         text = " ".join(catalog.build_parser().format_help().split())
         self.assertIn("header row with an id or name column", text)
         self.assertIn("other columns are kept as they are", text)
+        self.assertIn("not on the list", text)
+        self.assertIn("possible matches", text)
         self.assertIn("audience", text)
         self.assertIn("No audience set", text)
 
