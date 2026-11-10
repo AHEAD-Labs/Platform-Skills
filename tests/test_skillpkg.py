@@ -404,7 +404,7 @@ PINNED_MESSAGES = {
         "Make them identical: rename the folder to skills/<name>/, or change the name: line to the folder name."),
     "file-type": (
         "file type is not allowed in a skill folder",
-        "Allowed: .css .csv .html .jpg .json .md .png .py .txt .yaml .yml and LICENSE files. Remove the file or convert it to an allowed type."),
+        "Allowed: .css .csv .html .jpg .js .json .md .png .py .txt .yaml .yml and LICENSE files. Remove the file or convert it to an allowed type."),
     "file-too-large": (
         "file is larger than the 5 MB per-file limit",
         "Make the file smaller or remove it. Keep large data outside the repository and link to it from SKILL.md."),
@@ -437,7 +437,7 @@ PINNED_WARNINGS = {"recommended-missing", "owner-email", "version-not-bumped"}
 
 FIXTURES = ROOT / "tests" / "fixtures"
 FIXTURE_TESTS = {"good-folder", "name-mismatch", "missing-skill-md", "wrapper-folder", "stray-zip",
-                 "symlink", "bad-type", "path-traversal"}
+                 "symlink", "bad-type", "js-allowed", "path-traversal"}
 GOOD_MD = "skills/demo-skill/SKILL.md"
 MINIMAL_MD = "---\nname: demo-skill\ndescription: Demo skill. Use it only in tests.\n---\n# Demo\n"
 
@@ -471,8 +471,9 @@ def quiet_main(argv):
 
 class FolderBase(unittest.TestCase):
     def setUp(self):
-        self.tmp = Path(tempfile.mkdtemp())
-        self.addCleanup(shutil.rmtree, self.tmp, True)
+        td = tempfile.TemporaryDirectory()
+        self.addCleanup(td.cleanup)
+        self.tmp = Path(td.name)
 
     def fixture(self, name, where="repo"):
         return build(name, self.tmp / where)
@@ -544,8 +545,13 @@ class TestFixtures(FolderBase):
                         "symbolic links (shortcuts) are not allowed in this repository")
 
     def test_bad_type(self):
-        self.assertOnly(self.fixture("bad-type"), "error", "skills/demo-skill/run.exe",
-                        "file type is not allowed in a skill folder (.exe)")
+        r = self.fixture("bad-type")
+        self.assertOnly(r, "error", "skills/demo-skill/run.exe", "file type is not allowed in a skill folder (.exe)")
+        self.assertEqual(skillpkg.check_repo(r).findings[0].fix,
+                         "Allowed: .css .csv .html .jpg .js .json .md .png .py .txt .yaml .yml and LICENSE files. Remove the file or convert it to an allowed type.")
+
+    def test_js_allowed(self):
+        self.assertEqual(self.found(self.fixture("js-allowed")), [])
 
     @unittest.skipIf(os.name == "nt", "a backslash cannot be part of a file name on Windows")
     def test_path_traversal(self):
@@ -688,11 +694,17 @@ class TestSkillFolder(FolderBase):
         self.assertOnly(self.skill_md(b"---\nname: demo-skill\ndescription: caf\xe9\n---\n"), "error", GOOD_MD,
                         "SKILL.md is not valid UTF-8 text")
 
-    def test_placeholder_folder_is_ignored(self):
+    def test_gitkeep_only_folder_is_not_exempt(self):
         r = self.fixture("good-folder")
         self.write(r, "skills/claude/.gitkeep", "")
-        self.assertEqual(self.found(r), [])
-        self.assertEqual(skillpkg.check_repo(r).placeholders, ["skills/claude/"])
+        self.assertEqual(self.found(r), [
+            ("error", "skills/claude/", "skill folder has no SKILL.md at its top level"),
+            ("error", "skills/claude/.gitkeep", "file type is not allowed in a skill folder (no extension)")])
+
+    def test_empty_folder_is_not_exempt(self):
+        r = self.fixture("good-folder")
+        (r / "skills/empty-skill").mkdir()
+        self.assertOnly(r, "error", "skills/empty-skill/", "skill folder has no SKILL.md at its top level")
 
     def test_file_too_large(self):
         r = self.fixture("good-folder")

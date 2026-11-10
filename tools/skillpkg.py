@@ -25,7 +25,7 @@ MAX_ZIP_BYTES = 10 * 1024 * 1024
 MAX_FILE_BYTES = 5 * 1024 * 1024
 MAX_TOTAL_BYTES = 25 * 1024 * 1024
 MAX_ENTRIES = 200
-ALLOWED_EXT = {".md", ".txt", ".json", ".py", ".html", ".css", ".yaml", ".yml", ".csv", ".png", ".jpg"}
+ALLOWED_EXT = {".md", ".txt", ".json", ".py", ".html", ".css", ".js", ".yaml", ".yml", ".csv", ".png", ".jpg"}
 ID_RE = re.compile(r"^[a-z0-9][a-z0-9-]{1,63}$")
 SHA_RE = re.compile(r"^[0-9a-f]{64}$")
 
@@ -337,8 +337,7 @@ def auditor_gate(root, trusted_root=None, reports_dir=None):
 # ---------------------------------------------------------------------------------------------
 
 SKILLS_DIR = "skills"
-SKILLS_DIR_FILES = {"README.md"}  # the only files allowed directly in skills/
-PLACEHOLDER_FILES = {".gitkeep"}  # a folder holding only these is an empty placeholder, not a skill
+SKILLS_DIR_FILES = {"README.md"}  # the only files allowed directly in skills/; every folder there is a skill
 REQUIRED_FIELDS = ("name", "description")
 RECOMMENDED_FIELDS = ("version", "owner", "team", "ahead-platform", "audience",
                       "publication-status", "glean-link", "claude-link")
@@ -400,7 +399,7 @@ MESSAGES = {
         "the folder name."),
     "file-type": (
         "file type is not allowed in a skill folder",
-        "Allowed: .css .csv .html .jpg .json .md .png .py .txt .yaml .yml and LICENSE files. "
+        "Allowed: .css .csv .html .jpg .js .json .md .png .py .txt .yaml .yml and LICENSE files. "
         "Remove the file or convert it to an allowed type."),
     "file-too-large": (
         "file is larger than the 5 MB per-file limit",
@@ -462,8 +461,7 @@ class Finding:
 @dataclass
 class Report:
     findings: list
-    skills: dict = field(default_factory=dict)       # id -> {"errors": n, "warnings": n}
-    placeholders: list = field(default_factory=list)
+    skills: dict = field(default_factory=dict)  # id -> {"errors": n, "warnings": n}
     files_scanned: int = 0
 
     @property
@@ -635,16 +633,13 @@ def _version_of(skill_md):
 def _check_skills(root, zips, trusted_root):
     sd = root / SKILLS_DIR
     if sd.is_symlink() or not sd.is_dir():
-        return [Finding("no-skills-dir", SKILLS_DIR + "/")], {}, []
-    findings, skills, placeholders = [], {}, []
+        return [Finding("no-skills-dir", SKILLS_DIR + "/")], {}
+    findings, skills = [], {}
     for d in sorted(sd.iterdir()):
         if d.is_symlink() or not d.is_dir():
             continue  # links and loose files are reported by the tree scan
         sid, base = d.name, f"{SKILLS_DIR}/{d.name}/"
         files = _skill_files(d)
-        if all(r in PLACEHOLDER_FILES for r in files):
-            placeholders.append(base)
-            continue
         skills[sid] = {"errors": 0, "warnings": 0}
         out = []
         if not ID_RE.match(sid):
@@ -684,7 +679,7 @@ def _check_skills(root, zips, trusted_root):
             out.append(Finding("version-not-bumped", base + "SKILL.md", f"still {version}",
                                where.get("version", 1)))
         findings += out
-    return findings, skills, placeholders
+    return findings, skills
 
 
 def check_repo(root, trusted_root=None):
@@ -692,13 +687,13 @@ def check_repo(root, trusted_root=None):
     branch) is only used to warn when a changed skill keeps the same version."""
     root = Path(root)
     tree, zips, count = _scan_tree(root)
-    found, skills, placeholders = _check_skills(root, zips, trusted_root)
+    found, skills = _check_skills(root, zips, trusted_root)
     findings = sorted(tree + found, key=lambda f: (f.level != "error", f.path, f.line, f.code))
     for f in findings:
         parts = f.path.split("/")
         if parts[0] == SKILLS_DIR and len(parts) > 2 and parts[1] in skills:
             skills[parts[1]][f.level + "s"] += 1
-    return Report(findings, skills, placeholders, count)
+    return Report(findings, skills, count)
 
 
 def ci(root, trusted_root=None, reports_dir=None):
@@ -719,8 +714,6 @@ def format_text(rep):
     names = ", ".join(sorted(rep.skills)) or "none"
     out = [f"Skill check: scanned {_plural(rep.files_scanned, 'file')}; "
            f"{_plural(len(rep.skills), 'skill folder')}: {names}."]
-    if rep.placeholders:
-        out.append(f"Ignored placeholder folders (only .gitkeep): {', '.join(rep.placeholders)}")
     for f in rep.findings:
         out.append(f"{f.level.upper()} {_where(f)}: {f.message}")
         out.append(f"  How to fix: {f.fix}")
@@ -770,9 +763,6 @@ def format_summary(rep):
         out += ["", "| Skill | Result | Errors | Warnings |", "|---|---|---|---|"]
         out += [f"| `{sid}` | {'fail' if c['errors'] else 'pass'} | {c['errors']} | {c['warnings']} |"
                 for sid, c in sorted(rep.skills.items())]
-    if rep.placeholders:
-        out += ["", "Ignored placeholder folders (only `.gitkeep`): "
-                + ", ".join(f"`{p}`" for p in rep.placeholders)]
     return "\n".join(out) + "\n"
 
 
