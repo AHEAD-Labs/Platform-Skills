@@ -1,4 +1,4 @@
-import contextlib, csv, io, os, sys, tempfile, unittest
+import contextlib, csv, io, os, sys, tempfile, time, unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -59,6 +59,10 @@ class TestParseFrontmatter(unittest.TestCase):
     def test_inline_list(self):
         fm = catalog.parse_frontmatter(doc("---", "ahead-platform: [Claude, Glean]", "---"))
         self.assertEqual(fm["ahead-platform"], ["Claude", "Glean"])
+
+    def test_inline_list_keeps_commas_inside_quoted_items(self):
+        fm = catalog.parse_frontmatter(doc("---", 'a: ["x, y", \'p, q\', plain]', "b: []", "---"))
+        self.assertEqual(fm, {"a": ["x, y", "p, q", "plain"], "b": []})
 
     def test_block_list_flush_and_indented(self):
         fm = catalog.parse_frontmatter(doc("---", "a:", "- Claude", "- Glean", "b:", "  - One", "  - Two", "c: x", "---"))
@@ -435,6 +439,50 @@ class TestMain(Fixture):
         code, _, err = self.run_main("--skills-dir", str(self.root / "nope"))
         self.assertEqual(code, 2)
         self.assertIn("not a folder", err)
+
+
+class TestHostileInputs(unittest.TestCase):
+    """Frontmatter comes from PRs in a public repo: pathological lines must not stall the tool."""
+    N = 40000
+    LIMIT_SECONDS = 0.5  # linear code takes milliseconds; the old quadratic code took seconds
+
+    def assert_fast(self, fn):
+        start = time.perf_counter()
+        fn()
+        self.assertLess(time.perf_counter() - start, self.LIMIT_SECONDS)
+
+    def test_long_whitespace_run_inside_an_inline_list_item(self):
+        self.assert_fast(lambda: catalog.parse_frontmatter("---\na: [x" + " " * self.N + "y]\n---\n"))
+
+    def test_long_whitespace_run_inside_a_plain_value(self):
+        self.assert_fast(lambda: catalog.parse_frontmatter("---\nname: x" + " " * self.N + "y\n---\n"))
+
+    def test_long_whitespace_run_inside_a_block_list_item(self):
+        self.assert_fast(lambda: catalog.parse_frontmatter("---\na:\n- x" + " " * self.N + "y\n---\n"))
+
+    def test_many_wrapped_continuation_lines(self):
+        text = "---\ndescription: start\n" + "  more words here\n" * 20000 + "---\n"
+        self.assert_fast(lambda: catalog.parse_frontmatter(text))
+
+    def test_long_owner_value_with_an_at_sign(self):
+        owner = "a" * self.N + "@" + "b" * self.N
+        self.assert_fast(lambda: catalog.non_ahead_emails(owner))
+
+    def test_long_owner_value_without_an_at_sign(self):
+        self.assert_fast(lambda: catalog.owner_emails("a." * self.N))
+
+
+class TestOwnerEmails(unittest.TestCase):
+    def test_finds_emails_next_to_punctuation(self):
+        owner = "Pat <pat@gmail.com>, Lee (lee@ahead.com). Sam: sam@corp.ahead.com; plain name"
+        self.assertEqual(catalog.owner_emails(owner), ["pat@gmail.com", "lee@ahead.com", "sam@corp.ahead.com"])
+
+    def test_non_ahead_only_and_subdomains_count_as_ahead(self):
+        owner = "a@ahead.com, b@corp.ahead.com, c@gmail.com, d@notahead.com, e@ahead.com.evil.io"
+        self.assertEqual(catalog.non_ahead_emails(owner), ["c@gmail.com", "d@notahead.com", "e@ahead.com.evil.io"])
+
+    def test_text_without_an_email_has_none(self):
+        self.assertEqual(catalog.owner_emails("Ryan B, Adam W (team lead) @ home"), [])
 
 
 if __name__ == "__main__":

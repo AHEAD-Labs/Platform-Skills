@@ -23,6 +23,7 @@ KEY_RE = re.compile(r"^([A-Za-z0-9_][A-Za-z0-9_.-]*)\s*:(?:\s+(.*))?$")
 BLOCK_SCALAR_RE = re.compile(r"^[>|][+-]?$")
 
 
+COMMENT_RE = re.compile(r"\s#")  # a YAML comment starts at whitespace followed by '#'
 SQ_RE = re.compile(r"^'((?:[^']|'')*)'\s*(?:#.*)?$")
 DQ_RE = re.compile(r'^"((?:[^"\\]|\\.)*)"\s*(?:#.*)?$')
 
@@ -35,12 +36,38 @@ def _unquote(value):
     m = DQ_RE.match(value)
     if m:
         return re.sub(r'\\(["\\])', r"\1", m.group(1))
-    return re.sub(r"\s+#.*$", "", value).strip()
+    m = COMMENT_RE.search(value)
+    return (value[:m.start()] if m else value).strip()
 
 
 def _split_inline_list(value):
-    inner = value.strip()[1:-1].strip()
-    return [_unquote(p) for p in inner.split(",")] if inner else []
+    """Split `[a, "b, c", 'd']` on commas outside quotes, in one linear pass."""
+    inner = value.strip()[1:-1]
+    if not inner.strip():
+        return []
+    pieces, begin, quote, at_item_start, i = [], 0, None, True, 0
+    while i < len(inner):
+        c = inner[i]
+        if quote:
+            if quote == '"' and c == "\\":
+                i += 1  # skip the escaped character
+            elif c == quote:
+                if quote == "'" and inner[i + 1:i + 2] == "'":
+                    i += 1  # '' is an escaped single quote
+                else:
+                    quote = None
+        elif c == ",":
+            pieces.append(inner[begin:i])
+            begin, at_item_start = i + 1, True
+        elif c not in " \t":
+            if at_item_start and c in "\"'":
+                quote = c
+            at_item_start = False
+        i += 1
+    pieces.append(inner[begin:])
+    if not pieces[-1].strip():
+        pieces.pop()  # trailing comma
+    return [_unquote(p) for p in pieces]
 
 
 def parse_frontmatter(text):
@@ -213,17 +240,30 @@ def write_outputs(out_dir, rows, published=None):
     return paths
 
 
-EMAIL_RE = re.compile(r"[\w.+-]+@([\w-]+(?:\.[\w-]+)+)")
+EMAIL_SPLIT_RE = re.compile(r"[^\w.+@-]+")
+EMAIL_TOKEN_RE = re.compile(r"[\w.+-]+@([\w-]+(?:\.[\w-]+)+)")
+
+
+def _email_parts(owner):
+    """(email, domain) pairs found in an owner field. Tokenised first, then each token is
+    fully matched, so a long hostile value cannot trigger quadratic regex backtracking."""
+    parts = []
+    for token in EMAIL_SPLIT_RE.split(owner):
+        m = EMAIL_TOKEN_RE.fullmatch(token.rstrip("."))
+        if m:
+            parts.append((m.group(0), m.group(1).lower()))
+    return parts
+
+
+def owner_emails(owner):
+    """Email addresses in an owner field."""
+    return [email for email, _ in _email_parts(owner)]
 
 
 def non_ahead_emails(owner):
     """Email addresses in an owner field whose domain is not ahead.com (possible personal emails)."""
-    found = []
-    for m in EMAIL_RE.finditer(owner):
-        domain = m.group(1).lower()
-        if domain != "ahead.com" and not domain.endswith(".ahead.com"):
-            found.append(m.group(0))
-    return found
+    return [email for email, domain in _email_parts(owner)
+            if domain != "ahead.com" and not domain.endswith(".ahead.com")]
 
 
 def build_parser():
@@ -271,7 +311,7 @@ def main(argv=None):
         for w in warnings:
             print(f"  {w}")
     # Skill ids only: owner values (names, emails) are personal data and are never printed.
-    with_email = [r["id"] for r in rows if EMAIL_RE.search(r["owner"])]
+    with_email = [r["id"] for r in rows if owner_emails(r["owner"])]
     if with_email:
         print("Owner fields containing an email address (skill ids only): " + ", ".join(with_email))
     personal = [r["id"] for r in rows if non_ahead_emails(r["owner"])]
