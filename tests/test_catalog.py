@@ -1,0 +1,409 @@
+import contextlib, io, os, sys, tempfile, unittest
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT / "tools"))
+import catalog  # noqa: E402
+
+EXPECTED_COLUMNS = ["id", "name", "description", "version", "owner", "team", "platforms",
+                    "publication-status", "audience", "source path", "glean-link", "claude-link"]
+
+
+def doc(*lines):
+    return "\n".join(lines) + "\n"
+
+
+class Fixture(unittest.TestCase):
+    """A throwaway repo root with a skills/ folder, created under a temp dir."""
+
+    def setUp(self):
+        td = tempfile.TemporaryDirectory()
+        self.addCleanup(td.cleanup)
+        self.root = Path(td.name)
+        self.skills = self.root / "skills"
+        self.skills.mkdir()
+
+    def make_skill(self, sid, text):
+        d = self.skills / sid
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "SKILL.md").write_text(text, encoding="utf-8")
+        return d / "SKILL.md"
+
+    def collect(self):
+        return catalog.collect(self.skills, self.root)
+
+
+class TestParseFrontmatter(unittest.TestCase):
+    def test_plain_scalars(self):
+        fm = catalog.parse_frontmatter(doc("---", "name: demo-skill", "version: 1.2.3", "---", "# Body"))
+        self.assertEqual(fm, {"name": "demo-skill", "version": "1.2.3"})
+
+    def test_no_frontmatter_returns_empty(self):
+        self.assertEqual(catalog.parse_frontmatter("# Just a body\nname: not-frontmatter\n"), {})
+
+    def test_unclosed_frontmatter_returns_empty(self):
+        self.assertEqual(catalog.parse_frontmatter("---\nname: demo\n# never closed\n"), {})
+
+    def test_single_quoted_scalar(self):
+        fm = catalog.parse_frontmatter(doc("---", "version: '8.0.0'", "owner: 'O''Neil: lead'", "---"))
+        self.assertEqual(fm, {"version": "8.0.0", "owner": "O'Neil: lead"})
+
+    def test_double_quoted_scalar_with_escaped_quotes_and_colon(self):
+        fm = catalog.parse_frontmatter(doc("---", 'description: "Finds the \\"P:\\" product: fast"', "---"))
+        self.assertEqual(fm["description"], 'Finds the "P:" product: fast')
+
+    def test_value_may_contain_colons_and_commas_unquoted(self):
+        fm = catalog.parse_frontmatter(doc("---", "approved-by: A B (x, via Teams, 2026-10-27); C", "---"))
+        self.assertEqual(fm["approved-by"], "A B (x, via Teams, 2026-10-27); C")
+
+    def test_inline_list(self):
+        fm = catalog.parse_frontmatter(doc("---", "ahead-platform: [Claude, Glean]", "---"))
+        self.assertEqual(fm["ahead-platform"], ["Claude", "Glean"])
+
+    def test_block_list_flush_and_indented(self):
+        fm = catalog.parse_frontmatter(doc("---", "a:", "- Claude", "- Glean", "b:", "  - One", "  - Two", "c: x", "---"))
+        self.assertEqual(fm, {"a": ["Claude", "Glean"], "b": ["One", "Two"], "c": "x"})
+
+    def test_folded_block_scalar(self):
+        fm = catalog.parse_frontmatter(doc("---", "description: >", "  line one", "  line two", "name: x", "---"))
+        self.assertEqual(fm, {"description": "line one line two", "name": "x"})
+
+    def test_literal_block_scalar_keeps_line_breaks(self):
+        fm = catalog.parse_frontmatter(doc("---", "description: |", "  line one", "  line two", "---"))
+        self.assertEqual(fm["description"], "line one\nline two")
+
+    def test_comments_are_ignored(self):
+        fm = catalog.parse_frontmatter(doc("---", "# a full-line comment", "name: demo # trailing", "url: http://x/#frag", "---"))
+        self.assertEqual(fm, {"name": "demo", "url": "http://x/#frag"})
+
+    def test_crlf_and_bom(self):
+        fm = catalog.parse_frontmatter("\ufeff---\r\nname: demo\r\nversion: 1.0.0\r\n---\r\nbody\r\n")
+        self.assertEqual(fm, {"name": "demo", "version": "1.0.0"})
+
+    def test_key_order_in_file_does_not_matter(self):
+        fm = catalog.parse_frontmatter(doc("---", "description: d", "name: n", "---"))
+        self.assertEqual(fm, {"description": "d", "name": "n"})
+
+    def test_quoted_scalar_with_trailing_comment(self):
+        fm = catalog.parse_frontmatter(doc("---", 'name: "demo" # note', "version: '1.0' # note", "---"))
+        self.assertEqual(fm, {"name": "demo", "version": "1.0"})
+
+    def test_wrapped_plain_scalar_is_not_truncated(self):
+        fm = catalog.parse_frontmatter(doc("---", "description: first part", "  second part", "name: x", "---"))
+        self.assertEqual(fm, {"description": "first part second part", "name": "x"})
+
+
+FULL = doc("---", "name: fixture-alpha", "description: Does alpha things.", "version: 1.2.0",
+           "owner: Alpha Owner", "team: Team A", "ahead-platform: [Claude, Glean]",
+           "publication-status: Approved", "audience: All AHEAD staff",
+           "glean-link: https://glean.example/alpha", "claude-link: https://claude.example/alpha",
+           "---", "# Alpha")
+
+
+class TestCollect(Fixture):
+    def test_columns_match_the_charter_and_have_no_audit_status(self):
+        self.assertEqual(catalog.COLUMNS, EXPECTED_COLUMNS)
+        self.assertFalse([c for c in catalog.COLUMNS if "audit" in c])
+
+    def test_row_maps_every_frontmatter_field(self):
+        self.make_skill("fixture-alpha", FULL)
+        rows, warnings = self.collect()
+        self.assertEqual(warnings, [])
+        self.assertEqual(rows, [{
+            "id": "fixture-alpha", "name": "fixture-alpha", "description": "Does alpha things.",
+            "version": "1.2.0", "owner": "Alpha Owner", "team": "Team A", "platforms": "Claude, Glean",
+            "publication-status": "Approved", "audience": "All AHEAD staff",
+            "source path": "skills/fixture-alpha/SKILL.md",
+            "glean-link": "https://glean.example/alpha", "claude-link": "https://claude.example/alpha"}])
+
+    def test_links_are_blank_when_absent_never_invented(self):
+        self.make_skill("fixture-beta", doc("---", "name: fixture-beta", "description: d", "---"))
+        (row,), _ = self.collect()
+        self.assertEqual((row["glean-link"], row["claude-link"]), ("", ""))
+
+    def test_rows_sorted_by_id_and_id_comes_from_the_folder(self):
+        self.make_skill("fixture-zeta", doc("---", "name: other-name", "description: z", "---"))
+        self.make_skill("fixture-alpha", FULL)
+        rows, _ = self.collect()
+        self.assertEqual([r["id"] for r in rows], ["fixture-alpha", "fixture-zeta"])
+        self.assertEqual(rows[1]["name"], "other-name")
+
+    def test_folders_without_skill_md_are_skipped(self):
+        (self.skills / "claude").mkdir()
+        (self.skills / "claude" / ".gitkeep").write_text("")
+        (self.skills / "README.md").write_text("# not a skill\n")
+        self.make_skill("fixture-alpha", FULL)
+        rows, _ = self.collect()
+        self.assertEqual([r["id"] for r in rows], ["fixture-alpha"])
+
+    def test_skill_without_frontmatter_still_gets_a_row_with_blanks(self):
+        self.make_skill("fixture-bare", "# no frontmatter at all\n")
+        (row,), _ = self.collect()
+        self.assertEqual(row["id"], "fixture-bare")
+        self.assertEqual(row["source path"], "skills/fixture-bare/SKILL.md")
+        self.assertEqual([c for c in catalog.COLUMNS if row[c] == ""],
+                         [c for c in catalog.COLUMNS if c not in ("id", "source path")])
+
+    def test_whitespace_in_values_is_collapsed(self):
+        self.make_skill("fixture-ws", doc("---", "name: fixture-ws", "description: |", "  line one", "  line two", "---"))
+        (row,), _ = self.collect()
+        self.assertEqual(row["description"], "line one line two")
+
+    def test_missing_fields_lists_blank_columns_except_id_and_source_path(self):
+        self.make_skill("fixture-min", doc("---", "name: fixture-min", "description: d", "---"))
+        (row,), _ = self.collect()
+        self.assertEqual(catalog.missing_fields(row),
+                         ["version", "owner", "team", "platforms", "publication-status",
+                          "audience", "glean-link", "claude-link"])
+
+    def test_symlinked_skill_md_is_skipped_and_reported(self):
+        outside = self.root / "outside.md"
+        outside.write_text(FULL)
+        d = self.skills / "fixture-link"
+        d.mkdir()
+        os.symlink(outside, d / "SKILL.md")
+        rows, warnings = self.collect()
+        self.assertEqual(rows, [])
+        self.assertEqual(len(warnings), 1)
+        self.assertIn("fixture-link", warnings[0])
+        self.assertIn("symlink", warnings[0])
+
+    def test_symlinked_skill_folder_is_skipped_and_reported(self):
+        real = self.root / "elsewhere" / "fixture-real"
+        real.mkdir(parents=True)
+        (real / "SKILL.md").write_text(FULL)
+        os.symlink(real, self.skills / "fixture-dirlink")
+        rows, warnings = self.collect()
+        self.assertEqual(rows, [])
+        self.assertIn("symlink", warnings[0])
+
+
+def sample_row(**over):
+    row = {c: "" for c in catalog.COLUMNS}
+    row.update({"id": "fixture-alpha", "name": "fixture-alpha", "source path": "skills/fixture-alpha/SKILL.md"})
+    row.update(over)
+    return row
+
+
+class TestWriters(Fixture):
+    def read_csv(self, path):
+        import csv
+        with open(path, newline="", encoding="utf-8-sig") as f:
+            return list(csv.reader(f))
+
+    def test_csv_has_header_and_round_trips_awkward_values(self):
+        awkward = 'He said "hi", then\nleft | for good'
+        path = self.root / "out.csv"
+        catalog.write_csv(path, catalog.COLUMNS, [sample_row(description=awkward)])
+        header, first = self.read_csv(path)
+        self.assertEqual(header, catalog.COLUMNS)
+        self.assertEqual(first[catalog.COLUMNS.index("description")], awkward)
+
+    def test_csv_is_utf8_with_bom_so_excel_reads_dashes(self):
+        path = self.root / "out.csv"
+        catalog.write_csv(path, catalog.COLUMNS, [sample_row(description="Pilot — internal")])
+        self.assertTrue(path.read_bytes().startswith(b"\xef\xbb\xbf"))
+        self.assertEqual(self.read_csv(path)[1][catalog.COLUMNS.index("description")], "Pilot — internal")
+
+    def test_csv_neutralises_spreadsheet_formulas(self):
+        path = self.root / "out.csv"
+        evil = ['=HYPERLINK("http://x","y")', "+1+1", "-2+3", "@SUM(A1)"]
+        catalog.write_csv(path, catalog.COLUMNS, [sample_row(description=e) for e in evil])
+        cells = [r[catalog.COLUMNS.index("description")] for r in self.read_csv(path)[1:]]
+        self.assertEqual(cells, ["'" + e for e in evil])
+
+    def test_csv_leaves_normal_values_untouched(self):
+        path = self.root / "out.csv"
+        catalog.write_csv(path, catalog.COLUMNS, [sample_row(version="1.2.0", audience="All staff")])
+        row = self.read_csv(path)[1]
+        self.assertEqual(row[catalog.COLUMNS.index("version")], "1.2.0")
+        self.assertEqual(row[catalog.COLUMNS.index("audience")], "All staff")
+
+    def test_markdown_table_has_header_separator_and_one_line_per_row(self):
+        md = catalog.render_markdown([sample_row(), sample_row(id="fixture-beta", name="fixture-beta")])
+        table = [l for l in md.splitlines() if l.startswith("|")]
+        self.assertEqual(table[0], "| " + " | ".join(catalog.COLUMNS) + " |")
+        self.assertEqual(table[1], "|" + " --- |" * len(catalog.COLUMNS))
+        self.assertEqual(len(table), 4)
+        self.assertIn("2 skills", md)
+
+    def test_markdown_escapes_pipes_and_has_no_stray_newlines_in_cells(self):
+        md = catalog.render_markdown([sample_row(description="a | b\nc")])
+        rows = [l for l in md.splitlines() if l.startswith("| fixture-alpha")]
+        self.assertEqual(len(rows), 1)
+        self.assertIn("a \\| b c", rows[0])
+
+    def test_markdown_shortens_long_descriptions_but_csv_keeps_them(self):
+        long = "word " * 100
+        md = catalog.render_markdown([sample_row(description=long.strip())])
+        cell = [l for l in md.splitlines() if l.startswith("| fixture-alpha")][0].split(" | ")[2]
+        self.assertLessEqual(len(cell), catalog.MD_DESCRIPTION_MAX)
+        self.assertTrue(cell.endswith("…"))
+        path = self.root / "out.csv"
+        catalog.write_csv(path, catalog.COLUMNS, [sample_row(description=long.strip())])
+        self.assertEqual(self.read_csv(path)[1][catalog.COLUMNS.index("description")], long.strip())
+
+    def test_markdown_leaves_blank_links_blank(self):
+        md = catalog.render_markdown([sample_row()])
+        line = [l for l in md.splitlines() if l.startswith("| fixture-alpha")][0]
+        self.assertTrue(line.endswith("|  |  |"))
+
+
+class TestPublishedList(Fixture):
+    def published(self, text, encoding="utf-8"):
+        path = self.root / "published.csv"
+        path.write_bytes(text.encode(encoding))
+        return path
+
+    def rows(self):
+        return [sample_row(id="fixture-alpha", name="fixture-alpha"),
+                sample_row(id="fixture-gamma", name="Gamma Display Name")]
+
+    def test_lists_only_published_skills_missing_from_github_and_keeps_their_columns(self):
+        path = self.published("id,owner,notes\nfixture-alpha,A,x\n  FIXTURE-GAMMA ,G,y\nfixture-delta,D,z\n")
+        columns, missing = catalog.published_not_in_github(self.rows(), path)
+        self.assertEqual(columns, ["id", "owner", "notes"])
+        self.assertEqual(missing, [{"id": "fixture-delta", "owner": "D", "notes": "z"}])
+
+    def test_name_column_is_enough_and_header_case_is_ignored(self):
+        path = self.published("Name,Team\nfixture-alpha,A\nFixture-Epsilon,E\n")
+        columns, missing = catalog.published_not_in_github(self.rows(), path)
+        self.assertEqual(columns, ["Name", "Team"])
+        self.assertEqual(missing, [{"Name": "Fixture-Epsilon", "Team": "E"}])
+
+    def test_matches_the_frontmatter_name_as_well_as_the_folder_id(self):
+        path = self.published("name\ngamma display name\n")
+        _, missing = catalog.published_not_in_github(self.rows(), path)
+        self.assertEqual(missing, [])
+
+    def test_excel_bom_is_handled(self):
+        path = self.published("id\nfixture-alpha\nfixture-zeta\n", encoding="utf-8-sig")
+        columns, missing = catalog.published_not_in_github(self.rows(), path)
+        self.assertEqual(columns, ["id"])
+        self.assertEqual(missing, [{"id": "fixture-zeta"}])
+
+    def test_list_without_id_or_name_column_fails_loudly(self):
+        path = self.published("skill,owner\nfixture-alpha,A\n")
+        with self.assertRaises(ValueError) as ctx:
+            catalog.published_not_in_github(self.rows(), path)
+        self.assertIn("id", str(ctx.exception))
+        self.assertIn("name", str(ctx.exception))
+
+    def test_trailing_blank_rows_from_excel_are_ignored(self):
+        path = self.published("id,owner\nfixture-delta,D\n,\n,\n")
+        _, missing = catalog.published_not_in_github(self.rows(), path)
+        self.assertEqual(missing, [{"id": "fixture-delta", "owner": "D"}])
+
+    def test_markdown_gets_a_published_section_only_when_asked(self):
+        plain = catalog.render_markdown(self.rows())
+        self.assertNotIn("Published but not in GitHub", plain)
+        md = catalog.render_markdown(self.rows(), (["id", "owner"], [{"id": "fixture-delta", "owner": "D"}]))
+        self.assertIn("## Published but not in GitHub", md)
+        self.assertIn("| fixture-delta | D |", md)
+
+    def test_markdown_says_so_when_nothing_is_missing(self):
+        md = catalog.render_markdown(self.rows(), (["id"], []))
+        self.assertIn("## Published but not in GitHub", md)
+        self.assertIn("None", md)
+
+
+class TestWriteOutputs(Fixture):
+    def test_writes_exactly_catalog_csv_and_md_and_creates_the_folder(self):
+        out = self.root / "does" / "not" / "exist"
+        paths = catalog.write_outputs(out, [sample_row()])
+        self.assertEqual(sorted(p.name for p in paths), ["catalog.csv", "catalog.md"])
+        self.assertEqual(sorted(os.listdir(out)), ["catalog.csv", "catalog.md"])
+
+    def test_published_sheet_is_written_as_its_own_csv_even_when_empty(self):
+        out = self.root / "out"
+        paths = catalog.write_outputs(out, [sample_row()], (["id", "owner"], []))
+        self.assertEqual(sorted(p.name for p in paths),
+                         ["catalog.csv", "catalog.md", "published-not-in-github.csv"])
+        text = (out / "published-not-in-github.csv").read_text(encoding="utf-8-sig")
+        self.assertEqual(text.strip(), "id,owner")
+
+
+class TestMain(Fixture):
+    def setUp(self):
+        super().setUp()
+        td = tempfile.TemporaryDirectory()
+        self.addCleanup(td.cleanup)
+        self.out = Path(td.name)
+
+    def run_main(self, *extra, out=None):
+        stdout, stderr = io.StringIO(), io.StringIO()
+        args = ["--skills-dir", str(self.skills), "--out", str(out or self.out), *extra]
+        with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+            code = catalog.main(args)
+        return code, stdout.getvalue(), stderr.getvalue()
+
+    def test_default_output_folder_is_tmp(self):
+        self.assertEqual(catalog.build_parser().parse_args([]).out, "/tmp")
+
+    def test_writes_outputs_and_reports_row_count_and_missing_fields_per_skill(self):
+        self.make_skill("fixture-alpha", FULL)
+        self.make_skill("fixture-min", doc("---", "name: fixture-min", "description: d", "---"))
+        code, out, err = self.run_main()
+        self.assertEqual((code, err), (0, ""))
+        self.assertEqual(sorted(os.listdir(self.out)), ["catalog.csv", "catalog.md"])
+        self.assertIn("Skills: 2", out)
+        self.assertIn("fixture-alpha: complete", out)
+        self.assertIn("fixture-min: missing version, owner, team, platforms, publication-status, "
+                      "audience, glean-link, claude-link", out)
+
+    def test_flags_owner_fields_with_non_ahead_emails_only(self):
+        self.make_skill("fixture-a", doc("---", "name: fixture-a", "owner: Pat (pat@gmail.com), Lee (lee@ahead.com)", "---"))
+        self.make_skill("fixture-b", doc("---", "name: fixture-b", "owner: Lee (lee@ahead.com), Sam (sam@corp.ahead.com)", "---"))
+        _, out, _ = self.run_main()
+        self.assertIn("fixture-a: pat@gmail.com", out)
+        self.assertNotIn("fixture-b: lee", out)
+        self.assertNotIn("fixture-b: sam", out)
+
+    def test_skipped_skills_are_reported_in_the_output(self):
+        outside = self.root / "outside.md"
+        outside.write_text(FULL)
+        d = self.skills / "fixture-link"
+        d.mkdir()
+        os.symlink(outside, d / "SKILL.md")
+        code, out, _ = self.run_main()
+        self.assertEqual(code, 0)
+        self.assertIn("Skills: 0", out)
+        self.assertIn("fixture-link", out)
+        self.assertIn("symlink", out)
+
+    def test_published_list_adds_the_sheet_and_reports_its_count(self):
+        self.make_skill("fixture-alpha", FULL)
+        listing = self.out.parent / (self.out.name + "-published.csv")
+        self.addCleanup(lambda: listing.unlink(missing_ok=True))
+        listing.write_text("id\nfixture-alpha\nfixture-delta\n")
+        code, out, _ = self.run_main("--published-list", str(listing))
+        self.assertEqual(code, 0)
+        self.assertEqual(sorted(os.listdir(self.out)), ["catalog.csv", "catalog.md", "published-not-in-github.csv"])
+        self.assertIn("Published but not in GitHub: 1", out)
+
+    def test_bad_published_list_is_an_error_and_writes_nothing(self):
+        self.make_skill("fixture-alpha", FULL)
+        listing = self.out.parent / (self.out.name + "-bad.csv")
+        self.addCleanup(lambda: listing.unlink(missing_ok=True))
+        listing.write_text("skill\nfixture-alpha\n")
+        code, out, err = self.run_main("--published-list", str(listing))
+        self.assertEqual(code, 2)
+        self.assertIn("'id' or 'name'", err)
+        self.assertEqual(os.listdir(self.out), [])
+
+    def test_refuses_to_write_inside_the_repo(self):
+        self.make_skill("fixture-alpha", FULL)
+        inside = self.root / "docs"
+        code, _, err = self.run_main(out=inside)
+        self.assertEqual(code, 2)
+        self.assertIn("inside the repo", err)
+        self.assertFalse(inside.exists())
+
+    def test_missing_skills_folder_is_an_error_not_a_traceback(self):
+        code, _, err = self.run_main("--skills-dir", str(self.root / "nope"))
+        self.assertEqual(code, 2)
+        self.assertIn("not a folder", err)
+
+
+if __name__ == "__main__":
+    unittest.main()
