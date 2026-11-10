@@ -1,205 +1,89 @@
-# Platform-Skills
+# Platform-Skills: the reviewed, shared home for AHEAD skills
 
-**Skills Auditor is where we audit. Platform-Skills is where the approved version lives.**
+Platform-Skills holds AHEAD-managed skills as plain folders in git, so every skill has one source, an owner, a reviewer and a version history. A skill is a folder of instructions (plus any files it needs) that teaches an AI assistant, such as Claude or Glean, how to do one job well.
 
-Platform-Skills is the proposed maintained source for Skills that earn AHEAD Platform Skill status, with their version history. The current pilot is **Glean-first**; Claude distribution is stage two.
+This is a **public** repository. Commit only what you would be comfortable putting on a public web page.
 
-Status labels used below: **CONFIRMED** (demonstrated), **TESTING** (in progress), **OPEN** (unresolved or unproven), **BLOCKED** (cannot proceed until something else is resolved).
+## Add or update a skill in 3 steps
 
-## What this is, and what it is not
+1. **Put your skill in a folder.** Create `skills/<id>/` with a `SKILL.md` at its root. `<id>` uses lowercase letters, digits and hyphens, and must equal `name` in the frontmatter.
 
-Platform-Skills **is**:
+   ```markdown
+   ---
+   name: my-skill-id
+   description: One or two sentences on what the skill does and when to use it.
+   version: 1.0.0
+   owner: <your work email>
+   ---
+   ```
 
-- the proposed single home of each approved Platform Skill, so a Skill is maintained once rather than edited separately on each platform
-- the version history of those Skills: every change is a pull request with a reviewer
-- the pilot workspace for validating how Glean (and later Claude) consume Skills from this repository
+   `name` and `description` are required. `version`, `owner`, `team`, `ahead-platform`, `audience`, `publication-status`, `glean-link` and `claude-link` are recommended; leaving one out is a warning, not a failure.
+2. **Open a pull request** into `main`. The [pull request template](.github/pull_request_template.md) asks where the skill came from (its *origin*): GitHub, a Glean export, or assisted.
+3. **Fix what the checks flag, then get a review.** Checks run automatically on every pull request. A human code owner other than the author must approve before anything merges.
 
-Platform-Skills **is not**:
-
-- the audit workflow. That is [Skills Auditor](#relationship-to-skills-auditor), a separate repository (formerly Skills Marketplace).
-- a broad, company-wide intake channel
-- a proven automated publishing path. GitHub-to-Glean sync is still being validated (see [Validation matrix](#validation-matrix)).
-- a place for credentials, runtime infrastructure, or operational state
-
-## Operating model
-
-| Role | Owns |
-| --- | --- |
-| Domain teams / aligned FDEs | Skill business logic and ongoing maintenance |
-| Enterprise GPT | Standards, qualification and auditing, promotion rules, shared distribution architecture |
-
-- **New Skill: full audit.**
-- **Update to an existing Platform Skill: delta/regression audit.**
-- **Human approval is required before promotion.** Automated checks support the reviewer; they do not replace them.
-
-## Relationship to Skills Auditor
-
-| Repository | Role |
-| --- | --- |
-| Skills Auditor | Audit of a new or updated Skill before it is promoted |
-| Platform-Skills (this repo) | Maintained source for approved Platform Skills and their version history |
-
-```mermaid
-flowchart TD
-    A["Candidate / updated skill"] --> B["Skills Auditor<br/>Full or delta audit"]
-    B -->|Human approval| C["Platform-Skills<br/>Approved source"]
-    C -->|publish / sync<br/>pilot validating| D["Glean"]
-    C -.->|stage two| E["Claude"]
-```
-
-## Package philosophy
-
-- Users work with portable Skill **packages**, not repository internals. They should not need to hand-edit files in this repo.
-- Glean exports Skills as **ZIP packages**.
-- The six seed ZIP exports are **untouched baseline exports**, staged on the pilot pull request (not yet on `main`; see the [PTO handoff](docs/PTO-HANDOFF-2026-10-19.md)). They must remain byte-for-byte unchanged.
-- **Implemented:** the ZIP stays canonical, and `tools/skillpkg.py` deterministically generates the Glean-readable folder (`projections/glean/<id>/`) plus provenance once a Skill is audited and approved. Glean's acceptance of that folder from `main` is still to be confirmed.
-
-## Pipeline and operations
-
-| Doc | Contents |
-| --- | --- |
-| [docs/OPERATIONS.md](docs/OPERATIONS.md) | Submit, update, audit, approve, project, Glean release, rollback, troubleshooting |
-| [docs/GOVERNANCE.md](docs/GOVERNANCE.md) | Approval authority, trust boundaries, required branch protection |
-| [docs/AUDITOR-CONTRACT.md](docs/AUDITOR-CONTRACT.md) | Skills Auditor interface and integration status (**not yet integrated**) |
-| [docs/PTO-HANDOFF-2026-10-19.md](docs/PTO-HANDOFF-2026-10-19.md) | Current state, open PRs, next actions |
-
-CI (`validate-skills`) runs unit tests and a policy gate on every PR, with a read-only token and no secrets. Any new or changed Skill ZIP is **blocked** until a trusted Skills Auditor result exists. That block is intentional.
-
-## Glean pilot status
-
-| Finding | Status |
-| --- | --- |
-| Direct GitHub Skill import was previously demonstrated | CONFIRMED |
-| Nested Skill reference files were discovered successfully | CONFIRMED |
-| Private-repository import failure. Strongly suggests an authorization issue; root cause not proven | OPEN |
-| Scheduled GitHub sync. Prior result is inconclusive, not a failure of the architecture | OPEN |
-| ZIP-from-GitHub synchronization support. Not tested or vendor-confirmed | OPEN |
-
-### Why the previous sync experiment is inconclusive
-
-- It used a throwaway Skill.
-- It ran on an experiment branch, not the intended canonical `main` path.
-- Repository visibility changed during the experiment.
-- The Glean-side Skill was also interacted with and modified.
-
-A clean GitHub-only-writer test is still required.
-
-## Validation matrix
-
-| Area | Status | Notes |
-| --- | --- | --- |
-| Existing Shared Skill vs newly uploaded package: coexistence / deduplication | TESTING | Using the six baseline exports |
-| Canonical Git representation: ZIP vs expanded Skill directory | OPEN | Align with Grace, confirm with Glean |
-| GitHub update propagation | OPEN | |
-| Refresh / scheduled-sync behavior | OPEN | Needs the clean test below |
-| Private-repository authorization | OPEN | Hypothesis only; not proven |
-| Organization-wide publication / migration behavior | OPEN | |
-
-## Next execution sequence
-
-1. Capture the six existing org-wide Skill exports. *(Staged in `skills/shared/`.)*
-2. Test how Glean handles imported/uploaded copies alongside existing Shared Skills.
-3. Align package representation with Grace.
-4. Merge the approved pilot representation to `main`.
-5. Select one real Skill for a clean GitHub-backed synchronization test. **GitHub is the sole writer** during that test: no edits in Glean.
-6. Take unresolved product/platform questions to Glean.
-
-## What belongs here
-
-- Approved Skill packages, under [`skills/`](skills/README.md)
-- Short pointers to the Skill standard, under [`standards/`](standards/README.md)
-- Contribution and review guidance ([CONTRIBUTING.md](CONTRIBUTING.md))
-
-## What does not belong here
-
-- Credentials, API keys, tokens, or other secrets
-- Unapproved or experimental candidate Skills (they go through Skills Auditor first)
-- Skills Auditor evaluation logic, AI judging, or audit state
-- Deployment, sync, or notification infrastructure
-- Client data or other confidential material
-
-## How a skill moves
-
-1. **Candidate**: a new or updated Skill is drafted by the owning domain team / FDE.
-2. **Audited**: Skills Auditor runs a full audit (new Skill) or a delta/regression audit (update).
-3. **Approved**: a human approves, and it is merged into this repository. The merged state is the approved version.
-4. **Maintained**: later changes, including UAT feedback, come in as pull requests here.
-5. **Published**: the approved version reaches Glean and/or Claude. Publishing is separate from merging, and the mechanism (manual vs GitHub sync) is under validation.
-
-## Initial Landing Set
-
-The first population of this repository is the set of Skills launched through the initial Enterprise GPT Skills rollout on September 28, 2026:
-
-- `story-writing-for-presentations`
-- `outlook-event-creation`
-- `ahead-meeting-prep-and-notes`
-- `ahead-weekly-recap`
-- `ahead-skill-package-builder`
-- `ahead-daily-digest`
-
-These were launched in Glean and were also announced as available to users with Claude access.
-
-The six Glean org-wide export ZIPs are now staged under `skills/shared/` as baseline artifacts. Staging them does **not** mean they are approved Platform Skills or that anything has been published.
-
-- Each landed Skill should preserve its version history and provenance.
-- Once an artifact is reviewed and merged, `main` is the approved source for that Skill.
-- Availability in Glean or Claude is separate from the repository source of truth.
-- Updates based on UAT or user feedback come back through a new branch and pull request, not through silent changes to deployed copies.
-
-### Landing workflow
-
-```mermaid
-flowchart TD
-    A["Existing launched skill"] --> B["Approved artifact supplied"]
-    B --> C["Platform-Skills branch"]
-    C --> D["Pull request"]
-    D --> E["Peer review"]
-    E --> F["Merge to main"]
-    F --> G["Platform-Skills is the canonical<br/>approved repository version"]
-    G --> H["Publish / sync to Glean and/or Claude<br/>(mechanism under validation)"]
-```
-
-## Version history
-
-Git is the version history. Each approved change is a merged pull request, so the diff, the reviewer, and the reasoning stay attached to the change. To see what changed in a Skill, read its history:
+**To update a skill,** do the same three steps: edit the files in its folder, bump `version`, and open a pull request. Git history is the version history:
 
 ```sh
-git log --follow -- skills/<platform>/<skill-name>
+git log -- skills/<id>/
 ```
 
-## Why human review is the approval gate
+Which platform a skill is for (Claude, Glean, or both) is the `ahead-platform` frontmatter field. It is never a folder: every skill sits directly under `skills/`.
 
-A Skill shapes what Claude and Glean do for AHEAD employees. Automated checks catch structure and consistency problems, but a teammate has to confirm the Skill is correct and appropriate. Merging a pull request in this repository is that confirmation, which is why the author never approves their own change.
+More detail, including the Glean export and no-GitHub paths, is in [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## How UAT feedback becomes a change
+## Starting from a Glean export
 
-UAT feedback is never applied as an undocumented edit directly on a platform. It follows the same path as any other change:
+Unzip the export into `skills/<id>/` so that `SKILL.md` is at the root of that folder (not inside an extra wrapper folder). Do not commit the ZIP itself: a ZIP is an export format, not the format this repository stores. Choose **Glean export** as the origin in the pull request. It goes through the same checks and review as any other change.
 
-```mermaid
-flowchart LR
-    A["UAT feedback"] --> B["Update approved source"]
-    B --> C["Pull request"]
-    C --> D["Peer review"]
-    D --> E["Merge"]
-    E --> F["New approved version"]
-    F --> G["Publish / sync"]
-```
+## No GitHub account?
 
-If a platform copy has been edited directly, bring that change back here as a pull request so the repository stays the source of truth.
+Send the skill folder (or the Glean export) to a Platform-Skills maintainer. The maintainer places it in `skills/<id>/`, sets you as `owner` in the frontmatter, and opens the pull request with the origin **assisted**. You remain the owner of the skill. Because the maintainer authors that pull request, a different code owner must review and approve it.
+
+## Who reviews
+
+Every merge into `main` needs approval from a **human code owner who is not the author of the change**. Code owners are defined in [`.github/CODEOWNERS`](.github/CODEOWNERS). Automated checks help the reviewer; they do not approve anything, and having admin access is not approval either. The repository settings that enforce this are described in [docs/GOVERNANCE.md](docs/GOVERNANCE.md).
+
+## What the automated checks do
+
+They run on every pull request, using the copy of the checking tool that is on `main`, so a pull request cannot change the rules that judge it. They scan the whole tree for unsafe paths, symlinks, file types outside the allowed list and files over the size limits, and they read each skill folder's `SKILL.md`. A failed check is meant to say what is wrong and how to fix it.
+
+## What belongs here, and what does not
+
+Belongs here:
+
+- skill folders under [`skills/`](skills/README.md)
+- short pointers to writing standards under [`standards/`](standards/README.md)
+- contribution, review and governance guidance
+
+Does not belong here:
+
+- credentials, API keys, tokens or other secrets
+- client data or other confidential material
+- runtime infrastructure, deployment or sync tooling
+
+## Publishing to Glean or Claude
+
+Merging a pull request adds or updates a skill **in this repository**. It does not publish the skill to Glean or Claude, and nothing here syncs with either platform or has been verified to. The optional `glean-link` and `claude-link` frontmatter fields are pointers that a skill's owner maintains by hand.
+
+## Skills Auditor (paused)
+
+Skills Auditor was an earlier audit step for this repository. It is **paused**: an Auditor result is not required for a pull request to merge, and approval is the human code-owner review described above. The old integration notes are kept for reference in [docs/AUDITOR-CONTRACT.md](docs/AUDITOR-CONTRACT.md).
 
 ## Repository layout
 
 ```text
-README.md            this file
-CONTRIBUTING.md      how to propose and review a change
-skills/              Skills (claude/, glean/, shared/ for source ZIPs)
-projections/glean/   generated Glean-readable folders (approved Skills only)
-provenance/          per-Skill hash, audit and deployment record
-tools/skillpkg.py    validation, projection and CI gate (stdlib Python)
-tests/               unit tests (python3 -I -m unittest discover -s tests)
-docs/                operations, governance, Auditor contract, handoff
-standards/           pointers to the Skill standard
-.github/             CODEOWNERS, pull request template, validate-skills workflow
+skills/<id>/SKILL.md   one folder per skill (plus any files the skill needs)
+standards/             pointers to skill-writing standards
+docs/                  governance, operations and background
+tools/  tests/         the checking tool that CI runs, and its tests
+.github/               CI workflow, pull request template, code owners
+CONTRIBUTING.md        how to propose and review a change
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) to propose a change.
+| Doc | Contents |
+| --- | --- |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | How to add, update and review a skill |
+| [docs/GOVERNANCE.md](docs/GOVERNANCE.md) | Approval authority, trust boundaries, required repository settings |
+| [docs/OPERATIONS.md](docs/OPERATIONS.md) | Notes for maintainers: assisted submissions, rollback |
+| [docs/AUDITOR-CONTRACT.md](docs/AUDITOR-CONTRACT.md) | Skills Auditor integration notes (**paused**) |
+| [docs/PTO-HANDOFF-2026-10-19.md](docs/PTO-HANDOFF-2026-10-19.md) | Handoff note from 2026-10-19 (**historical**) |

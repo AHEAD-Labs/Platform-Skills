@@ -1,6 +1,8 @@
-# Skills Auditor integration (NOT YET INTEGRATED)
+# Skills Auditor integration (PAUSED)
 
-Platform-Skills never fabricates or self-certifies an audit. Today the CI gate returns **POLICY BLOCK (exit 2)** for every new or changed Skill ZIP, because no trusted Auditor result can reach it yet.
+> **Status: paused.** Skills Auditor is not part of the approval path. A pull request does not need an Auditor result to merge. Approval is review by a human code owner who is not the author (see [GOVERNANCE.md](GOVERNANCE.md)). The notes below describe the design as it stood when the integration was being planned. They are kept for reference only and do not describe how this repository works today.
+
+Platform-Skills never fabricates or self-certifies an audit. When this was written, the CI gate returned **POLICY BLOCK (exit 2)** for every new or changed Skill ZIP, because no trusted Auditor result could reach it yet.
 
 ## Verified Auditor interface (inspected read-only, 2026-10-19)
 - Repository: `AHEAD-Labs/Skills-Marketplace` (**internal**). Branch `feat/skills-auditor-deterministic-core`, commit `db4d148`. That branch was **local only, not pushed**, so nothing can be pinned yet.
