@@ -19,16 +19,39 @@ Not sure what a skill folder looks like? See [Skill folder at a glance](#skill-f
 
 ## Skill folder at a glance
 
-```markdown
----
-name: my-skill-id
-description: One or two sentences on what the skill does and when to use it.
-version: 1.0.0
-owner: your-github-handle
----
+```text
+skills/
+└── example-skill/          <- the folder name is the skill's id
+    ├── SKILL.md            <- required, at the top of the folder
+    └── references/         <- optional: any extra files the skill needs
+        └── notes.md
 ```
 
-`name` and `description` are required. `version`, `owner`, `team`, `ahead-platform`, `audience`, `publication-status`, `glean-link` and `claude-link` are recommended; leaving one out is a warning, not a failure.
+`SKILL.md` starts with a short block of frontmatter:
+
+```markdown
+---
+# Required
+name: example-skill                  # same as the folder name
+description: One or two sentences on what the skill does and when to use it.
+
+# Recommended (leaving one out is a warning, not a failure)
+version: 1.0.0                       # bump it on every update
+owner: your-github-handle            # a GitHub handle or a role; no contact details
+team: Your Team
+ahead-platform: [Claude, Glean]      # which platform(s) the skill is for
+audience: Who the skill is for
+publication-status: Draft
+# glean-link:                        # add once the skill is published in Glean
+# claude-link:                       # add once the skill is published in Claude
+---
+
+# Example skill
+
+The instructions the assistant follows go here, in plain Markdown.
+```
+
+Only `name` and `description` are required.
 
 ## Package philosophy
 
