@@ -1,6 +1,6 @@
 # Platform-Skills: the reviewed, shared home for AHEAD skills
 
-Platform-Skills holds AHEAD-managed **skills** as plain folders in git. A skill is a folder of instructions (plus any files it needs) that teaches an AI assistant, such as Claude or Glean, how to do one job well. Each skill here has an owner, a reviewer and a version history.
+Platform-Skills holds AHEAD-managed **skills** as plain folders in git. A skill is a folder of instructions (plus any files it needs) that teaches an AI assistant, such as Claude or Glean, how to do one job well. The rule here is that someone other than the author reviews every change, and git keeps each skill's version history.
 
 - **Belongs here:** skill folders, and guidance on writing and reviewing them.
 - **Does not belong here:** credentials, tokens, client data, or anything you would not put on a public web page. This repository is public.
@@ -68,11 +68,11 @@ Only `name` and `description` are required.
 
 ## No GitHub account?
 
-Send the skill folder (or the Glean export) to a Platform-Skills maintainer through your team's internal chat. The maintainer places it in `skills/<id>/`, sets you as `owner` in the frontmatter, and opens the pull request with the origin **assisted**. You remain the owner of the skill. Because the maintainer authors that pull request, a different code owner must review and approve it.
+Send the skill folder (or the Glean export) to a Platform-Skills maintainer through your team's internal chat. The maintainer places it in `skills/<id>/`, sets you as `owner` in the frontmatter (by team name or handle, as for any skill), and opens the pull request with the origin **assisted**. You remain the owner of the skill. Because the maintainer authors that pull request, a different code owner must review and approve it.
 
 ## Who reviews
 
-The rule: every merge into `main` needs approval from a **human code owner who is not the author of the change**. Code owners are defined in [`.github/CODEOWNERS`](.github/CODEOWNERS). Automated checks help the reviewer; they do not approve anything, and having admin access is not approval either. The repository settings that enforce this rule are described in [docs/GOVERNANCE.md](docs/GOVERNANCE.md).
+The rule: every merge into `main` needs approval from a **human code owner who is not the author of the change**. Code owners are defined in [`.github/CODEOWNERS`](.github/CODEOWNERS). Automated checks help the reviewer; they do not approve anything, and having admin access is not approval either. The repository settings that administrators apply to enforce this rule are described in [docs/GOVERNANCE.md](docs/GOVERNANCE.md).
 
 ## What the automated checks do
 
