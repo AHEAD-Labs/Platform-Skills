@@ -701,6 +701,20 @@ class TestSkillFolder(FolderBase):
             ("error", "skills/claude/", "skill folder has no SKILL.md at its top level"),
             ("error", "skills/claude/.gitkeep", "file type is not allowed in a skill folder (no extension)")])
 
+    def test_folder_named_skill_md_is_not_a_skill_md(self):
+        r = self.fixture("good-folder")
+        (r / GOOD_MD).unlink()
+        self.write(r, GOOD_MD + "/notes.md", "x")
+        self.assertOnly(r, "error", "skills/demo-skill/", "skill folder has no SKILL.md at its top level")
+
+    def test_symlinked_skill_md_is_not_a_skill_md(self):
+        r = self.fixture("good-folder")
+        (r / GOOD_MD).rename(r / "skills/demo-skill/real.md")
+        os.symlink("real.md", r / GOOD_MD)
+        self.assertEqual(self.found(r), [
+            ("error", "skills/demo-skill/", "skill folder has no SKILL.md at its top level"),
+            ("error", GOOD_MD, "symbolic links (shortcuts) are not allowed in this repository")])
+
     def test_empty_folder_is_not_exempt(self):
         r = self.fixture("good-folder")
         (r / "skills/empty-skill").mkdir()

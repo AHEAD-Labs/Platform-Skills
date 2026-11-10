@@ -649,10 +649,11 @@ def _check_skills(root, zips, trusted_root):
         if "SKILL.md" in top and stat.S_ISREG(os.lstat(d / "SKILL.md").st_mode):
             found, meta, where = _check_skill_md(d / "SKILL.md", sid, base + "SKILL.md")
             out += found
-        elif "SKILL.md" not in top:
-            variant = next((n for n in sorted(top) if n.casefold() == "skill.md"), None)
-            nested = next((r for r in files if PurePosixPath(r).name.casefold() == "skill.md"), None)
-            if variant:
+        else:  # absent, or not a regular file (a folder or link named SKILL.md is not a SKILL.md)
+            variant = next((n for n in sorted(top) if n != "SKILL.md" and n.casefold() == "skill.md"), None)
+            nested = next((r for r in files if PurePosixPath(r).name.casefold() == "skill.md"
+                           and r != "SKILL.md"), None)
+            if variant and stat.S_ISREG(os.lstat(d / variant).st_mode):
                 out.append(Finding("skill-md-case", base + variant))
             else:
                 out.append(Finding("missing-skill-md", base, f"found {base}{nested}" if nested else ""))
