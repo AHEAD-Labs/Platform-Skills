@@ -127,7 +127,7 @@ FAIL: 1 error, 1 warning. Each problem above says how to fix it.
 | `skill folder has no SKILL.md at its top level` | `Each folder directly under skills/ is one skill and needs skills/<id>/SKILL.md. If unzipping an export added an extra folder level (skills/<id>/<id>/SKILL.md), move those files up one level.` |
 | `the file must be named SKILL.md, in capital letters` | `Rename the file to SKILL.md.` |
 | `two paths in this skill differ only in upper/lower case` | `Rename or remove one of them; they collide on Windows and macOS.` |
-| `file type is not allowed in a skill folder` | `Allowed: .css .csv .html .jpg .json .md .png .py .txt .yaml .yml and LICENSE files. Remove the file or convert it to an allowed type.` |
+| `file type is not allowed in a skill folder` | `Allowed: .css .csv .html .jpg .js .json .md .png .py .txt .yaml .yml and LICENSE files. Remove the file or convert it to an allowed type.` |
 | `file is larger than the 5 MB per-file limit` | `Make the file smaller or remove it. Keep large data outside the repository and link to it from SKILL.md.` |
 | `skill folder is larger than the 25 MB total limit` | `Remove or shrink files. Keep large data outside the repository and link to it from SKILL.md.` |
 | `skill folder has more than 200 files` | `Remove files the skill does not need, or combine small files.` |
