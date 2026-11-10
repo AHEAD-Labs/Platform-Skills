@@ -48,8 +48,8 @@ class TestParseFrontmatter(unittest.TestCase):
         self.assertEqual(catalog.parse_frontmatter("---\nname: demo\n# never closed\n"), {})
 
     def test_single_quoted_scalar(self):
-        fm = catalog.parse_frontmatter(doc("---", "version: '8.0.0'", "owner: 'O''Neil: lead'", "---"))
-        self.assertEqual(fm, {"version": "8.0.0", "owner": "O'Neil: lead"})
+        fm = catalog.parse_frontmatter(doc("---", "version: '8.0.0'", "owner: 'It''s: lead'", "---"))
+        self.assertEqual(fm, {"version": "8.0.0", "owner": "It's: lead"})
 
     def test_double_quoted_scalar_with_escaped_quotes_and_colon(self):
         fm = catalog.parse_frontmatter(doc("---", 'description: "Finds the \\"P:\\" product: fast"', "---"))
@@ -371,6 +371,107 @@ class TestWriteOutputs(Fixture):
         self.assertEqual(read("possible-matches.csv"), ",".join(catalog.POSSIBLE_COLUMNS))
 
 
+class TestFrontmatterShapes(Fixture):
+    """Synthetic fixtures that mirror the *shapes* of real skill frontmatter (quoting, lists, wrapped
+    values, unknown keys, missing fields). Every word, name and address here is invented."""
+
+    def row_for(self, text, sid="fixture-shape"):
+        self.make_skill(sid, text)
+        rows, warnings = self.collect()
+        self.assertEqual(warnings, [])
+        (row,) = [r for r in rows if r["id"] == sid]
+        return row
+
+    def test_plain_full_set_with_unknown_extra_keys(self):
+        row = self.row_for(doc(
+            "---", "name: fixture-shape",
+            "description: Synthetic text, with commas; a semicolon, (parentheses), a slash a/b and an em dash \u2014 here.",
+            "version: 1.2.3", "owner: Owner One (owner.one@example.com)", "team: Team Alpha",
+            "approved-by: Reviewer One (Group A, 2000-01-02); Reviewer Two / Group B (2000-01-03)",
+            "approved-date: 2000-01-03 (first); 2000-01-04 (second)",
+            "second-approval-by: Reviewer Three (Group C, round 2)", "second-approval-date: 2000-01-05",
+            "further-approvals: Reviewer Four 2000-01-06, Reviewer Five.",
+            "ahead-platform: [Claude, Glean]", "sensitivity: Internal",
+            "publication-status: Approved for wide use (both platforms)", "---", "# Body"))
+        self.assertEqual(row, {
+            "id": "fixture-shape", "name": "fixture-shape",
+            "description": "Synthetic text, with commas; a semicolon, (parentheses), a slash a/b and an em dash \u2014 here.",
+            "version": "1.2.3", "owner": "Owner One (owner.one@example.com)", "team": "Team Alpha",
+            "platforms": "Claude, Glean", "publication-status": "Approved for wide use (both platforms)",
+            "audience": "", "source path": "skills/fixture-shape/", "glean-link": "", "claude-link": ""})
+        self.assertEqual(sorted(row), sorted(EXPECTED_COLUMNS))  # unknown keys never become columns
+
+    def test_double_quoted_description_first_with_escaped_quotes_colons_and_name_after(self):
+        row = self.row_for(doc(
+            "---", 'description: "Synthetic (A:), B, C: D, \'E F\' G \\"H I\\" J. USE WHEN: (1) one, two; (2) three."',
+            "name: fixture-shape", "---"))
+        self.assertEqual(row["description"], "Synthetic (A:), B, C: D, 'E F' G \"H I\" J. USE WHEN: (1) one, two; (2) three.")
+        self.assertEqual(row["name"], "fixture-shape")
+
+    def test_name_and_description_only_leaves_everything_else_blank(self):
+        row = self.row_for(doc("---", "name: fixture-shape", "description: Synthetic, plain, with commas.", "---"))
+        self.assertEqual(catalog.missing_fields(row),
+                         ["version", "owner", "team", "platforms", "publication-status", "audience",
+                          "glean-link", "claude-link"])
+
+    def test_single_and_double_quoted_values_with_a_block_list_platform_and_extra_keys(self):
+        row = self.row_for(doc(
+            "---", "name: fixture-shape", "description: d", "version: '9.8.7'",
+            'owner: "Owner One, Owner Two (owner.two@example.com), Owner Three"', 'team: "Team - Group Z"',
+            "approved-date: '2000-02-03'", "spec-author: owner.four@example.com",
+            "glean-skill-owner: owner.five@example.com", "ahead-platform:", "- Glean", "- Claude",
+            'sensitivity: "Internal \u2014 restricted data"', "publication-status: Approved",
+            "requires: A connector (MCP) enabled for the user", "---"))
+        self.assertEqual((row["version"], row["owner"], row["team"], row["platforms"], row["publication-status"]),
+                         ("9.8.7", "Owner One, Owner Two (owner.two@example.com), Owner Three",
+                          "Team - Group Z", "Glean, Claude", "Approved"))
+
+    def test_double_quotes_inside_a_plain_scalar_and_time_like_colons_are_kept(self):
+        row = self.row_for(doc(
+            "---", 'description: Synthetic "quoted phrase", "another one" and a 10:30 time, plus it\'s apostrophe.',
+            "name: fixture-shape", "---"))
+        self.assertEqual(row["description"], 'Synthetic "quoted phrase", "another one" and a 10:30 time, plus it\'s apostrophe.')
+
+    def test_every_list_spelling_gives_the_same_platforms_in_the_same_order(self):
+        spellings = {"fixture-inline": ["ahead-platform: [Glean, Claude]"],
+                     "fixture-quoted": ['ahead-platform: ["Glean", \'Claude\']'],
+                     "fixture-flush": ["ahead-platform:", "- Glean", "- Claude"],
+                     "fixture-indented": ["ahead-platform:", "  - Glean", "  - Claude"]}
+        for sid, lines in spellings.items():
+            self.make_skill(sid, doc("---", f"name: {sid}", *lines, "---"))
+        rows, _ = self.collect()
+        self.assertEqual({r["id"]: r["platforms"] for r in rows}, {sid: "Glean, Claude" for sid in spellings})
+
+    def test_multi_line_description_forms_collapse_to_one_line(self):
+        forms = {"fixture-wrapped": ["description: first line", "  second line"],
+                 "fixture-folded": ["description: >", "  first line", "  second line"],
+                 "fixture-folded-strip": ["description: >-", "  first line", "  second line"],
+                 "fixture-literal": ["description: |", "  first line", "  second line"]}
+        for sid, lines in forms.items():
+            self.make_skill(sid, doc("---", f"name: {sid}", *lines, "---"))
+        rows, _ = self.collect()
+        self.assertEqual({r["id"]: r["description"] for r in rows}, {sid: "first line second line" for sid in forms})
+
+    def test_unknown_keys_and_their_values_never_reach_the_outputs(self):
+        self.make_skill("fixture-shape", doc("---", "name: fixture-shape", "description: d",
+                                              "approved-by: Reviewer One (Group A)", "mystery-key: secret-value", "---"))
+        rows, _ = self.collect()
+        out = self.root / "out"
+        for path in catalog.write_outputs(out, rows):
+            text = path.read_text(encoding="utf-8-sig")
+            for leaked in ("Reviewer One", "secret-value", "mystery-key", "approved-by"):
+                self.assertNotIn(leaked, text)
+
+    def test_em_dash_survives_the_csv_and_markdown_outputs(self):
+        self.make_skill("fixture-shape", doc("---", "name: fixture-shape", "description: Synthetic \u2014 dash", "---"))
+        rows, _ = self.collect()
+        out = self.root / "out"
+        catalog.write_outputs(out, rows)
+        with open(out / "catalog.csv", newline="", encoding="utf-8-sig") as f:
+            self.assertEqual(next(csv.DictReader(f))["description"], "Synthetic \u2014 dash")
+        self.assertIn("Synthetic \u2014 dash", (out / "catalog.md").read_text(encoding="utf-8"))
+
+
 class TestMain(Fixture):
     def setUp(self):
         super().setUp()
@@ -405,9 +506,9 @@ class TestMain(Fixture):
                       "audience, glean-link, claude-link", out)
 
     def test_lists_ids_of_owner_fields_with_emails_never_the_values(self):
-        self.make_skill("fixture-a", doc("---", "name: fixture-a", "owner: Pat (pat@gmail.com), Lee (lee@ahead.com)", "---"))
-        self.make_skill("fixture-b", doc("---", "name: fixture-b", "owner: Lee (lee@ahead.com), Sam (sam@corp.ahead.com)", "---"))
-        self.make_skill("fixture-c", doc("---", "name: fixture-c", "owner: Sam Smith", "---"))
+        self.make_skill("fixture-a", doc("---", "name: fixture-a", "owner: Owner One (owner.one@example.com), Owner Two (owner.two@ahead.com)", "---"))
+        self.make_skill("fixture-b", doc("---", "name: fixture-b", "owner: Owner Two (owner.two@ahead.com), Owner Three (owner.three@corp.ahead.com)", "---"))
+        self.make_skill("fixture-c", doc("---", "name: fixture-c", "owner: Owner Four", "---"))
         _, out, err = self.run_main()
         lines = out.splitlines()
         self.assertIn("Owner fields containing an email address (skill ids only): fixture-a, fixture-b", lines)
@@ -415,7 +516,7 @@ class TestMain(Fixture):
         self.assertNotIn("@", out + err)
 
     def test_no_email_lines_when_no_owner_has_an_email(self):
-        self.make_skill("fixture-c", doc("---", "name: fixture-c", "owner: Sam Smith", "---"))
+        self.make_skill("fixture-c", doc("---", "name: fixture-c", "owner: Owner Four", "---"))
         _, out, _ = self.run_main()
         self.assertNotIn("email address", out)
         self.assertNotIn("non-AHEAD", out)
@@ -495,6 +596,30 @@ class TestMain(Fixture):
         self.assertNotIn("Traceback", err)
         self.assertEqual(os.listdir(self.out), [])
 
+    def test_mixed_real_world_shapes_give_one_row_each_with_the_expected_missing_fields(self):
+        full = ["version: 1.0.0", "owner: Owner One (owner.one@example.com)", "team: Team Alpha",
+                "ahead-platform: [Claude, Glean]", "publication-status: Approved"]
+        eight = ("version, owner, team, platforms, publication-status, audience, glean-link, claude-link")
+        self.make_skill("fixture-full", doc("---", "name: fixture-full", "description: d, e; f.", *full, "extra-key: x", "---"))
+        self.make_skill("fixture-dq-first", doc("---", 'description: "A (B:), C: D, \'E\' \\"F\\"."', "name: fixture-dq-first", "---"))
+        self.make_skill("fixture-minimal", doc("---", "name: fixture-minimal", "description: Plain, with commas.", "---"))
+        self.make_skill("fixture-quoted", doc("---", "name: fixture-quoted", "description: d", "version: '2.0.0'",
+                                              'owner: "Owner Two (owner.two@example.com), Owner Three"', 'team: "Team - Z"',
+                                              "ahead-platform:", "- Claude", "- Glean", "publication-status: Draft", "---"))
+        self.make_skill("fixture-dash-first", doc("---", "description: Plain \u2014 with a dash; and a semicolon.", "name: fixture-dash-first", "---"))
+        self.make_skill("fixture-no-owner", doc("---", "name: fixture-no-owner", "description: d", "version: 0.1.0",
+                                                "team: Team Beta", "ahead-platform: [Glean]", "publication-status: Pilot", "---"))
+        code, out, _ = self.run_main()
+        lines = out.splitlines()
+        self.assertEqual(code, 0)
+        self.assertIn("Skills: 6", lines)
+        self.assertIn("  fixture-full: missing audience, glean-link, claude-link", lines)
+        self.assertIn("  fixture-quoted: missing audience, glean-link, claude-link", lines)
+        self.assertIn("  fixture-no-owner: missing owner, audience, glean-link, claude-link", lines)
+        for sid in ("fixture-dq-first", "fixture-minimal", "fixture-dash-first"):
+            self.assertIn(f"  {sid}: missing {eight}", lines)
+        self.assertIn("Owner fields containing an email address (skill ids only): fixture-full, fixture-quoted", lines)
+
     def test_refuses_to_write_inside_the_repo(self):
         self.make_skill("fixture-alpha", FULL)
         inside = self.root / "docs"
@@ -568,15 +693,15 @@ class TestHostileInputs(unittest.TestCase):
 
 class TestOwnerEmails(unittest.TestCase):
     def test_finds_emails_next_to_punctuation(self):
-        owner = "Pat <pat@gmail.com>, Lee (lee@ahead.com). Sam: sam@corp.ahead.com; plain name"
-        self.assertEqual(catalog.owner_emails(owner), ["pat@gmail.com", "lee@ahead.com", "sam@corp.ahead.com"])
+        owner = "Owner One <owner.one@example.com>, Owner Two (owner.two@ahead.com). Owner Three: owner.three@corp.ahead.com; plain name"
+        self.assertEqual(catalog.owner_emails(owner), ["owner.one@example.com", "owner.two@ahead.com", "owner.three@corp.ahead.com"])
 
     def test_non_ahead_only_and_subdomains_count_as_ahead(self):
-        owner = "a@ahead.com, b@corp.ahead.com, c@gmail.com, d@notahead.com, e@ahead.com.evil.io"
-        self.assertEqual(catalog.non_ahead_emails(owner), ["c@gmail.com", "d@notahead.com", "e@ahead.com.evil.io"])
+        owner = "a@ahead.com, b@corp.ahead.com, c@example.com, d@notahead.com, e@ahead.com.evil.io"
+        self.assertEqual(catalog.non_ahead_emails(owner), ["c@example.com", "d@notahead.com", "e@ahead.com.evil.io"])
 
     def test_text_without_an_email_has_none(self):
-        self.assertEqual(catalog.owner_emails("Ryan B, Adam W (team lead) @ home"), [])
+        self.assertEqual(catalog.owner_emails("Owner A, Owner B (team lead) @ home"), [])
 
 
 def audience_rows():
@@ -619,10 +744,10 @@ class TestAudienceView(Fixture):
         self.assertNotIn("| fixture-c |", sections[0] + sections[1])
 
     def test_markdown_never_includes_owner_values(self):
-        rows = [sample_row(owner="Pat Person (pat@example.com)", audience="Sales")]
+        rows = [sample_row(owner="Owner Five (owner.five@example.com)", audience="Sales")]
         md = catalog.render_audience_markdown(rows)
-        self.assertNotIn("Pat Person", md)
-        self.assertNotIn("pat@example.com", md)
+        self.assertNotIn("Owner Five", md)
+        self.assertNotIn("owner.five@example.com", md)
 
     def test_summary_names_each_audience_count(self):
         self.assertEqual(catalog.audience_summary(audience_rows()),
