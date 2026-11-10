@@ -1,4 +1,4 @@
-import contextlib, hashlib, io, json, os, shutil, stat, sys, tempfile, unittest, zipfile
+import contextlib, hashlib, io, json, os, shutil, stat, subprocess, sys, tempfile, unittest, zipfile
 from pathlib import Path
 from unittest import mock
 
@@ -861,6 +861,211 @@ class TestCLI(FolderBase):
         code, _, err = quiet_main(["ci", "--root", str(self.fixture("good-folder")), "--auditor-reports", str(self.tmp / "none")])
         self.assertEqual(code, 0)
         self.assertIn("NOTICE: --auditor-reports is ignored.", err)
+
+
+# ---------------------------------------------------------------------------------------------
+# Error-path coverage: every place tools/skillpkg.py can raise, report an ERROR or WARNING, or
+# exit non-zero has a test. The two classes below hold the paths that had none.
+# ---------------------------------------------------------------------------------------------
+
+class TestPausedCodeErrorPaths(Base):
+    """Paused Auditor/ZIP lifecycle: kept unused, but its error paths stay tested so it cannot rot."""
+
+    def bad(self, entries, msg):
+        with self.assertRaisesRegex(PackageError, msg):
+            skillpkg.inspect_zip(make_zip(self.tmp / "bad.zip", entries), "demo-skill")
+
+    def test_zip_skill_md_without_frontmatter(self):
+        self.bad({"SKILL.md": "# Demo\n"}, "must start with a '---' frontmatter block")
+
+    def test_zip_skill_md_frontmatter_not_closed(self):
+        self.bad({"SKILL.md": "---\nname: demo-skill\n"}, "frontmatter block is not closed")
+
+    def test_zip_archive_too_large(self):
+        with mock.patch.object(skillpkg, "MAX_ZIP_BYTES", 10):
+            with self.assertRaisesRegex(PackageError, "archive larger than 10 bytes"):
+                skillpkg.inspect_zip(self.zip, "demo-skill")
+
+    def test_zip_encrypted_entry(self):
+        raw = bytearray(self.zip.read_bytes())
+        cd = raw.index(b"PK\x01\x02")  # central directory header: general purpose flags at +8
+        raw[cd + 8] |= 0x1
+        p = self.tmp / "enc.zip"; p.write_bytes(bytes(raw))
+        with self.assertRaisesRegex(PackageError, "encrypted entry not allowed"):
+            skillpkg.inspect_zip(p, "demo-skill")
+
+    def test_zip_entry_larger_than_its_header_claims(self):
+        big = io.BytesIO(b"a" * (skillpkg.MAX_FILE_BYTES + 1))
+        with mock.patch.object(zipfile.ZipFile, "open", lambda self, *a, **k: big):
+            with self.assertRaisesRegex(PackageError, "file too large"):
+                skillpkg.inspect_zip(self.zip, "demo-skill")
+
+    def test_zip_total_size_limit(self):
+        with mock.patch.object(skillpkg, "MAX_TOTAL_BYTES", 30):
+            self.bad({"SKILL.md": SKILL_MD}, "archive expands beyond the total size limit")
+
+    def test_zip_directory_entries_are_skipped(self):
+        z = make_zip(self.tmp / "dirs.zip", {"SKILL.md": SKILL_MD, "references/": "", "references/a.md": "x"})
+        self.assertEqual(sorted(skillpkg.inspect_zip(z, "demo-skill")["files"]), ["SKILL.md", "references/a.md"])
+
+    def test_audit_report_not_json(self):
+        self.audit.write_text("not json")
+        with self.assertRaisesRegex(PackageError, "audit report is not valid JSON"):
+            self.project()
+
+    def test_audit_report_for_another_skill(self):
+        self.edit(self.audit, skill_id="other-skill")
+        with self.assertRaisesRegex(PackageError, "audit report is for a different skill id"):
+            self.project()
+
+    def test_approval_for_another_package(self):
+        self.edit(self.appr, package_sha256="0" * 64)
+        with self.assertRaisesRegex(PackageError, "approval record does not match"):
+            self.project()
+
+    def test_approval_missing_fields(self):
+        self.edit(self.appr, approved_at="")
+        with self.assertRaisesRegex(PackageError, "approval must record author, approved_by and approved_at"):
+            self.project()
+
+    def test_verify_without_projection(self):
+        with self.assertRaisesRegex(PackageError, "projection missing"):
+            skillpkg.verify(self.zip, "demo-skill", self.out, self.prov)
+
+    def test_verify_detects_a_different_source_zip(self):
+        self.project()
+        make_zip(self.zip, {"SKILL.md": SKILL_MD.replace("1.0.0", "2.0.0")})
+        with self.assertRaisesRegex(PackageError, "provenance records a different source ZIP"):
+            skillpkg.verify(self.zip, "demo-skill", self.out, self.prov)
+
+    def test_verify_detects_a_missing_file(self):
+        self.project()
+        (self.out / "demo-skill/references/a.md").unlink()
+        with self.assertRaisesRegex(PackageError, "projection missing file: references/a.md"):
+            skillpkg.verify(self.zip, "demo-skill", self.out, self.prov)
+
+    def test_verify_detects_tampered_manifest_hashes(self):
+        self.project()
+        self.edit(self.prov / "demo-skill.json", files={})
+        with self.assertRaisesRegex(PackageError, "provenance file hashes do not match"):
+            skillpkg.verify(self.zip, "demo-skill", self.out, self.prov)
+
+    def gate_repo(self):
+        r = self.tmp / "repo"; (r / "skills/shared").mkdir(parents=True)
+        shutil.copy(self.zip, r / "skills/shared/demo-skill.zip")
+        t = self.tmp / "trusted"; t.mkdir()
+        return r, t
+
+    def test_auditor_gate_invalid_zip_and_top_level_git_skipped(self):
+        r, t = self.gate_repo()
+        (r / "skills/shared/demo-skill.zip").write_text("corrupt")
+        (r / ".git").mkdir(); shutil.copy(self.zip, r / ".git/pack.zip")
+        with self.assertRaises(PackageError) as cm:
+            skillpkg.auditor_gate(r, t)
+        self.assertIn("not a valid ZIP archive", str(cm.exception))
+        self.assertNotIn(".git", str(cm.exception))
+
+    def test_auditor_gate_projection_without_source_zip(self):
+        r, t = self.gate_repo()
+        (r / "projections/glean/orphan-skill").mkdir(parents=True)
+        with self.assertRaisesRegex(PackageError, "projection orphan-skill has no source ZIP"):
+            skillpkg.auditor_gate(r, t)
+
+    def test_cli_validate(self):
+        code, out, _ = quiet_main(["validate", str(self.zip), "--skill-id", "demo-skill"])
+        self.assertEqual(code, 0)
+        self.assertTrue(out.startswith("OK demo-skill version=1.0.0 files=3 sha256="))
+        code, _, err = quiet_main(["validate", str(self.zip), "--skill-id", "Bad_Id"])
+        self.assertEqual(code, 1)
+        self.assertIn("FAIL: invalid skill id 'Bad_Id'", err)
+
+    def test_cli_project_and_verify(self):
+        common = ["--skill-id", "demo-skill", "--out-root", str(self.out), "--prov-root", str(self.prov)]
+        code, out, _ = quiet_main(["project", str(self.zip), *common, "--audit", str(self.audit), "--approval", str(self.appr)])
+        self.assertEqual((code, out.split(" ")[0]), (0, "PROJECTED"))
+        self.assertEqual(quiet_main(["verify", str(self.zip), *common])[:2], (0, "VERIFIED demo-skill\n"))
+        (self.out / "demo-skill/SKILL.md").write_text("tampered")
+        code, _, err = quiet_main(["verify", str(self.zip), *common])
+        self.assertEqual(code, 1)
+        self.assertIn("FAIL: projection file differs from source ZIP: SKILL.md", err)
+
+    def test_cli_plan(self):
+        r, t = self.gate_repo()
+        code, out, _ = quiet_main(["plan", "--root", str(r), "--trusted-root", str(t)])
+        self.assertEqual(code, 0)
+        self.assertEqual(json.loads(out), [{"skill_id": "demo-skill", "zip": "skills/shared/demo-skill.zip",
+                                            "mode": "full", "baseline": None}])
+
+    def test_cli_policy_block_handler_exits_2(self):
+        # No CLI input reaches this handler any more: only the paused auditor_gate() raises
+        # PolicyBlock, and no subcommand calls it. The handler is exercised directly.
+        with mock.patch.object(skillpkg, "inspect_zip", side_effect=skillpkg.PolicyBlock("no trusted audit")):
+            code, _, err = quiet_main(["validate", str(self.zip), "--skill-id", "demo-skill"])
+        self.assertEqual(code, 2)
+        self.assertIn("POLICY BLOCK", err)
+
+
+class TestFolderCheckErrorPaths(FolderBase):
+    @unittest.skipUnless(hasattr(os, "mkfifo"), "needs os.mkfifo")
+    def test_special_file_is_rejected_without_being_opened(self):
+        r = self.fixture("good-folder")
+        (r / "docs").mkdir()
+        os.mkfifo(r / "docs/pipe")
+        self.assertOnly(r, "error", "docs/pipe",
+                        "symbolic links (shortcuts) are not allowed in this repository (not a regular file)")
+
+    @unittest.skipIf(os.name == "nt", "a backslash cannot be part of a folder name on Windows")
+    def test_unsafe_folder_name_is_reported_once(self):
+        r = self.fixture("good-folder")
+        self.write(r, "docs/bad\\dir/notes.md", "x")
+        self.assertOnly(r, "error", "docs/bad\\dir/",
+                        "unsafe file or folder name (backslash, control character or drive letter)")
+
+    def test_control_character_in_name(self):
+        r = self.fixture("good-folder")
+        self.write(r, "docs/a\x01b.md", "x")
+        self.assertOnly(r, "error", "docs/a\x01b.md",
+                        "unsafe file or folder name (backslash, control character or drive letter)")
+
+    def test_long_frontmatter_name_is_truncated_in_the_message(self):
+        r = self.fixture("good-folder")
+        self.write(r, GOOD_MD, (r / GOOD_MD).read_text().replace("name: demo-skill", "name: " + "x" * 100))
+        self.assertOnly(r, "error", GOOD_MD, "frontmatter name does not match the folder name (name: "
+                        + "x" * 77 + "..., folder: demo-skill)")
+
+    def test_unreadable_trusted_version_gives_no_version_warning(self):
+        trusted, head = self.fixture("good-folder", "base"), self.fixture("good-folder", "head")
+        self.write(trusted, GOOD_MD, "no frontmatter\n")
+        self.write(head, "skills/demo-skill/references/notes.md", "Changed notes.\n")
+        self.assertEqual(self.found(head, trusted), [])
+
+    def test_frontmatter_comment_lines_and_multiline_quoted_values(self):
+        meta, where, dups = skillpkg.parse_frontmatter(
+            '---\n# a comment\nname: demo-skill\ndescription: "first line\n  second line"\n---\n')
+        self.assertEqual((meta["name"], meta["description"], where["name"], dups),
+                         ("demo-skill", "first line second line", 3, []))
+
+    def test_cli_no_skills_folder_exits_1(self):
+        r = self.tmp / "empty"; r.mkdir()
+        code, out, _ = quiet_main(["ci", "--root", str(r)])
+        self.assertEqual(code, 1)
+        self.assertIn("ERROR skills/: no skills/ folder found, so nothing was checked", out)
+
+    def test_cli_usage_errors_exit_2(self):
+        for argv in ([], ["ci", "--bogus"], ["validate", "x.zip"], ["project", "x.zip", "--skill-id", "demo-skill"], ["nope"]):
+            with self.subTest(argv=argv), contextlib.redirect_stderr(io.StringIO()):
+                with self.assertRaises(SystemExit) as cm:
+                    skillpkg.main(argv)
+                self.assertEqual(cm.exception.code, 2)
+
+    def test_script_entry_point_exit_codes(self):
+        env = {k: v for k, v in os.environ.items() if not k.startswith("GITHUB_")}
+        tool = str(ROOT / "tools/skillpkg.py")
+        run = lambda *a: subprocess.run([sys.executable, "-I", "-B", tool, *a], env=env,
+                                        capture_output=True, text=True).returncode
+        self.assertEqual(run("ci", "--root", str(self.fixture("good-folder", "ok"))), 0)
+        self.assertEqual(run("ci", "--root", str(self.fixture("stray-zip", "bad"))), 1)
+        self.assertEqual(run(), 2)
 
 
 class TestWorkflow(unittest.TestCase):
