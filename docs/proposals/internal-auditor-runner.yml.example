@@ -1,0 +1,70 @@
+# PROPOSAL, NOT ACTIVE, NOT TESTED. Intended to live in an INTERNAL repository (for example
+# AHEAD-Labs/Skills-Marketplace), never here. It is an .example file, so GitHub does not run it.
+#
+# Why it is internal-side: a public repository cannot call a reusable workflow stored in an
+# internal repository. Holding the Auditor App key in this public repo would also expose it
+# to anyone with write access. Here the trusted side pulls public data and reports back
+# only a commit status.
+#
+# Prerequisites (owner decisions):
+#   - Skills-Marketplace `db4d148` (or later) pushed, merged, and pinned below as AUDITOR_SHA
+#   - GitHub App "skills-auditor-status" installed on Platform-Skills with statuses:write ONLY
+#     (secrets PS_STATUS_APP_ID / PS_STATUS_APP_KEY held in the internal repo)
+#   - Platform-Skills ruleset requiring status `skills-auditor/result` from that App
+name: platform-skills-audit
+on:
+  workflow_dispatch:
+    inputs:
+      pr_head_sha: {description: "Platform-Skills PR head commit (40 hex)", required: true, type: string}
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      AUDITOR_SHA: "<pin full commit sha>"
+      HEAD_SHA: ${{ inputs.pr_head_sha }}
+    steps:
+      - name: Validate input
+        run: '[[ "$HEAD_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::bad sha"; exit 3; }'
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with: {ref: "${{ env.AUDITOR_SHA }}", path: auditor, persist-credentials: false}
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with: {repository: AHEAD-Labs/Platform-Skills, ref: "${{ env.HEAD_SHA }}", path: candidate, persist-credentials: false}
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with: {repository: AHEAD-Labs/Platform-Skills, ref: main, path: approved, persist-credentials: false}
+      - name: Audit every package in full or delta mode, as planned from trusted main
+        id: run
+        run: |
+          set -u; mkdir -p out; overall=success
+          python3 -I approved/tools/skillpkg.py plan --root candidate --trusted-root approved > plan.json
+          python3 -I - <<'PY' > jobs.txt
+          import json
+          for i in json.load(open("plan.json")):
+              print(i["skill_id"], i["zip"], i["mode"], i["baseline"] or "-")
+          PY
+          while read -r id zip mode base; do
+            if [ "$mode" = delta ]; then args=(delta "candidate/$zip" --baseline "approved/$base"); else args=(full "candidate/$zip"); fi
+            python3 -I auditor/scripts/skills_auditor.py "${args[@]}" --json "out/$id.json" --md "out/$id.md" || overall=failure
+          done < jobs.txt
+          # Seed baselines also get audited here; they pass the Platform-Skills gate separately.
+          python3 -I approved/tools/skillpkg.py ci --root candidate --trusted-root approved --auditor-reports out || overall=failure
+          echo "state=$overall" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with: {name: skills-auditor-reports, path: out/, retention-days: 30}
+      - id: app
+        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
+        with:
+          app-id: ${{ secrets.PS_STATUS_APP_ID }}
+          private-key: ${{ secrets.PS_STATUS_APP_KEY }}
+          owner: AHEAD-Labs
+          repositories: Platform-Skills
+          permission-statuses: write
+      - name: Post status (summary only; findings stay internal)
+        env: {GH_TOKEN: "${{ steps.app.outputs.token }}", STATE: "${{ steps.run.outputs.state || 'error' }}"}
+        run: >
+          gh api -X POST "repos/AHEAD-Labs/Platform-Skills/statuses/$HEAD_SHA"
+          -f state="$STATE" -f context="skills-auditor/result"
+          -f description="Skills Auditor (pinned $AUDITOR_SHA): $STATE. Reports in internal run."
