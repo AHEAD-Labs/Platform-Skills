@@ -8,7 +8,8 @@ The rule is one folder per skill: `skills/<id>/` with a `SKILL.md` at its root. 
 
 1. **Put your skill in a folder.** Create or edit `skills/<id>/SKILL.md` and any files the skill needs next to it.
    - Required frontmatter: `name` and `description`.
-   - Recommended frontmatter (a missing one is a warning, not a failure): `version`, `owner`, `team`, `ahead-platform`, `audience`, `publication-status`, `glean-link`, `claude-link`.
+   - Recommended frontmatter (a missing one is a warning, not a failure): `version`, `owner`, `team`, `ahead-platform`, `audience`, `publication-status`, `glean-link`, `claude-link`. The README shows a [complete example](README.md#skill-folder-at-a-glance).
+   - `owner` is a team name or GitHub handle. This repository is public, so keep contact details out of the frontmatter.
    - Platform is a frontmatter field (`ahead-platform`), not a folder.
    - **Updating:** edit the same folder and bump `version`.
 2. **Open a pull request into `main`.** Branch from `main`, for example `add/<id>` or `update/<id>`, and use the pull request template. Say what changed and why, and choose the origin: GitHub, Glean export or assisted.
@@ -20,6 +21,16 @@ Git history is the version history. To see how a skill changed:
 git log -- skills/<id>/
 ```
 
+## Check your change before you push
+
+From the repository root, with Python 3:
+
+```sh
+python3 -I -B tools/skillpkg.py ci --root .
+```
+
+An `ERROR` fails the check; fix it and run the command again. A `WARNING` does not fail it. What each message means, and how to fix it, is in the README under [If a check fails](README.md#if-a-check-fails).
+
 ## Starting from a Glean export
 
 1. Unzip the export into `skills/<id>/`, so that `SKILL.md` sits at the root of that folder and not inside a wrapper folder.
@@ -30,7 +41,7 @@ git log -- skills/<id>/
 ## Without a GitHub account (assisted)
 
 1. Send the skill folder, or the Glean export, to a Platform-Skills maintainer through your team's internal chat.
-2. The maintainer places it in `skills/<id>/`, sets you as `owner` in the frontmatter, and opens the pull request with the origin **assisted**.
+2. The maintainer places it in `skills/<id>/`, sets you as `owner` in the frontmatter (by team name or handle, as for any skill), and opens the pull request with the origin **assisted**.
 3. You stay the owner of the skill. The maintainer is only the author of the pull request, so a different code owner must review and approve it.
 
 To update the skill later, send the changed folder the same way, with the new `version`.
@@ -52,7 +63,7 @@ Merging changes this repository only. It does not publish a skill to Glean or Cl
 Run the unit tests before pushing:
 
 ```sh
-python3 -I -m unittest discover -s tests
+python3 -I -B -m unittest discover -s tests
 ```
 
 Changes under `.github/` or `tools/` alter the checks themselves, so they need review from a code owner like any other change. See [docs/GOVERNANCE.md](docs/GOVERNANCE.md).
