@@ -472,6 +472,62 @@ class TestFrontmatterShapes(Fixture):
         self.assertIn("Synthetic \u2014 dash", (out / "catalog.md").read_text(encoding="utf-8"))
 
 
+class TestFillIn(Fixture):
+    """fill-in sheet: ids and field names only, one row per skill, a column per missing recommended field."""
+
+    def rows(self):
+        have = {"version": "1.0.0", "owner": "Owner One (owner.one@example.com)", "team": "Team A",
+                "platforms": "Claude", "publication-status": "Approved"}
+        return [sample_row(id="fixture-a", name="a", **have),                                   # lacks audience + links
+                sample_row(id="fixture-b", name="b", **{**have, "owner": "", "audience": "Sales"})]  # lacks owner + links
+
+    def test_one_row_per_skill_and_a_column_per_missing_recommended_field(self):
+        columns, table = catalog.fill_in_table(self.rows())
+        self.assertEqual(columns, ["id", "owner", "audience", "glean-link", "claude-link"])
+        self.assertEqual(table, [
+            {"id": "fixture-a", "owner": "", "audience": "MISSING", "glean-link": "MISSING", "claude-link": "MISSING"},
+            {"id": "fixture-b", "owner": "MISSING", "audience": "", "glean-link": "MISSING", "claude-link": "MISSING"}])
+
+    def test_no_column_for_a_field_nobody_is_missing(self):
+        columns, _ = catalog.fill_in_table(self.rows())
+        for present_everywhere in ("version", "team", "platforms", "publication-status"):
+            self.assertNotIn(present_everywhere, columns)
+
+    def test_required_fields_are_not_part_of_the_sheet(self):
+        columns, _ = catalog.fill_in_table([sample_row(name="", description="")])
+        self.assertNotIn("name", columns)
+        self.assertNotIn("description", columns)
+
+    def test_sheet_cells_never_carry_frontmatter_values(self):
+        out = self.root / "out"
+        catalog.write_outputs(out, self.rows(), fill_in=True)
+        text = (out / "fill-in.csv").read_text(encoding="utf-8-sig")
+        for value in ("Owner One", "owner.one@example.com", "Team A", "Approved", "Sales", "Claude"):
+            self.assertNotIn(value, text)
+
+    def test_publication_status_values_are_counted_with_not_set_last(self):
+        rows = [sample_row(**{"publication-status": v}) for v in ("Approved", "Pilot", "", "Approved", "Draft", "", "Approved")]
+        self.assertEqual(catalog.status_counts(rows),
+                         [("Approved", 3), ("Draft", 1), ("Pilot", 1), ("(not set)", 2)])
+
+    def test_write_outputs_adds_the_two_sheets_only_when_asked(self):
+        plain = catalog.write_outputs(self.root / "plain", self.rows())
+        self.assertNotIn("fill-in.csv", [p.name for p in plain])
+        asked = catalog.write_outputs(self.root / "asked", self.rows(), fill_in=True)
+        self.assertEqual(sorted(p.name for p in asked), sorted(OUTPUT_FILES + ["fill-in.csv", "publication-status-values.csv"]))
+        with open(self.root / "asked" / "publication-status-values.csv", newline="", encoding="utf-8-sig") as f:
+            self.assertEqual(list(csv.reader(f)), [["publication-status", "skills"], ["Approved", "2"]])
+
+
+def run_without(case):
+    """Run main without --fill-in in a fresh out dir and return its stdout lines."""
+    with tempfile.TemporaryDirectory() as td:
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            catalog.main(["--skills-dir", str(case.skills), "--out", td])
+        return stdout.getvalue().splitlines()
+
+
 class TestMain(Fixture):
     def setUp(self):
         super().setUp()
@@ -619,6 +675,24 @@ class TestMain(Fixture):
         for sid in ("fixture-dq-first", "fixture-minimal", "fixture-dash-first"):
             self.assertIn(f"  {sid}: missing {eight}", lines)
         self.assertIn("Owner fields containing an email address (skill ids only): fixture-full, fixture-quoted", lines)
+
+    def test_fill_in_flag_writes_the_sheets_and_prints_the_status_values(self):
+        self.make_skill("fixture-a", doc("---", "name: fixture-a", "description: d", "publication-status: Approved", "---"))
+        self.make_skill("fixture-b", doc("---", "name: fixture-b", "description: d", "publication-status: Pilot", "---"))
+        self.make_skill("fixture-c", doc("---", "name: fixture-c", "description: d", "publication-status: Approved", "---"))
+        self.make_skill("fixture-d", doc("---", "name: fixture-d", "description: d", "---"))
+        code, out, _ = self.run_main("--fill-in")
+        lines = out.splitlines()
+        self.assertEqual(code, 0)
+        self.assertEqual(sorted(os.listdir(self.out)), sorted(OUTPUT_FILES + ["fill-in.csv", "publication-status-values.csv"]))
+        self.assertIn("Fill-in sheet: 4 of 4 skills need at least one recommended field (fill-in.csv)", lines)
+        self.assertIn("publication-status values: Approved 2, Pilot 1, (not set) 1", lines)
+        self.assertNotIn("fill-in.csv", [l.strip() for l in run_without(self)])
+
+    def test_help_mentions_the_fill_in_option(self):
+        text = " ".join(catalog.build_parser().format_help().split())
+        self.assertIn("--fill-in", text)
+        self.assertIn("recommended field", text)
 
     def test_refuses_to_write_inside_the_repo(self):
         self.make_skill("fixture-alpha", FULL)

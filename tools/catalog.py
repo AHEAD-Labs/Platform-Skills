@@ -19,6 +19,10 @@ FRONTMATTER_KEYS = {"name": "name", "description": "description", "version": "ve
 MAX_READ_BYTES = 256 * 1024
 MD_DESCRIPTION_MAX = 200
 NO_AUDIENCE = "No audience set"
+# Recommended (warning-only) frontmatter fields, as catalog columns; name and description are required, not listed here.
+RECOMMENDED = ["version", "owner", "team", "platforms", "publication-status", "audience", "glean-link", "claude-link"]
+MISSING_MARK = "MISSING"
+NOT_SET = "(not set)"
 POSSIBLE_COLUMNS = ["published entry", "skill id", "skill name", "why"]
 POSSIBLE_WHY = "same after ignoring case, hyphens, underscores and spaces"
 SEPARATORS_RE = re.compile(r"[\s_-]+")
@@ -316,10 +320,27 @@ def render_audience_markdown(rows):
     return "\n".join(lines).rstrip("\n") + "\n"
 
 
-def write_outputs(out_dir, rows, gap=None):
+def fill_in_table(rows):
+    """(columns, rows) for the owners' fill-in sheet: one row per skill id, one column per recommended
+    field that at least one skill is missing. A cell says MISSING or is empty. Ids and field names only."""
+    columns = [c for c in RECOMMENDED if any(not r[c] for r in rows)]
+    table = [{"id": r["id"], **{c: MISSING_MARK if not r[c] else "" for c in columns}} for r in rows]
+    return ["id"] + columns, table
+
+
+def status_counts(rows):
+    """[(publication-status value, skills)] by count then value, with skills lacking one last."""
+    counts = {}
+    for r in rows:
+        value = r["publication-status"] or NOT_SET
+        counts[value] = counts.get(value, 0) + 1
+    return sorted(counts.items(), key=lambda kv: (kv[0] == NOT_SET, -kv[1], kv[0]))
+
+
+def write_outputs(out_dir, rows, gap=None, fill_in=False):
     """Write catalog.csv, catalog.md and catalog-by-audience.md to out_dir, plus the three
     gap-report CSVs (published-not-in-github, github-not-published, possible-matches) when a
-    gap report is given."""
+    gap report is given, plus fill-in.csv and publication-status-values.csv when fill_in is set."""
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     paths = [out / "catalog.csv", out / "catalog.md", out / "catalog-by-audience.md"]
@@ -332,6 +353,13 @@ def write_outputs(out_dir, rows, gap=None):
                                     ("possible-matches.csv", POSSIBLE_COLUMNS, gap["possible"])):
             paths.append(out / name)
             write_csv(paths[-1], columns, data)
+    if fill_in:
+        columns, table = fill_in_table(rows)
+        paths.append(out / "fill-in.csv")
+        write_csv(paths[-1], columns, table)
+        paths.append(out / "publication-status-values.csv")
+        write_csv(paths[-1], ["publication-status", "skills"],
+                  [{"publication-status": v, "skills": str(n)} for v, n in status_counts(rows)])
     return paths
 
 
@@ -378,6 +406,11 @@ def build_parser():
                              "directions (published but not in GitHub; in GitHub but not on the list) plus "
                              "possible matches to check by hand (same after ignoring hyphens, underscores and "
                              "spaces; never counted as matches)")
+    parser.add_argument("--fill-in", action="store_true",
+                        help="also write fill-in.csv (one row per skill id, a column per recommended field that "
+                             "any skill is missing, cells say MISSING; ids and field names only) and "
+                             "publication-status-values.csv (each distinct publication-status value with its "
+                             "skill count)")
     return parser
 
 
@@ -401,7 +434,7 @@ def main(argv=None):
         except (OSError, ValueError) as e:
             print(f"error: {e}", file=sys.stderr)
             return 2
-    paths = write_outputs(out, rows, gap)
+    paths = write_outputs(out, rows, gap, fill_in=args.fill_in)
 
     print(f"Skills: {len(rows)}")
     print("Missing fields per skill:")
@@ -423,6 +456,11 @@ def main(argv=None):
     print("Audience view: " + (", ".join(audience_summary(rows)) or "no skills"))
     if rows and not any(_audiences(r) for r in rows):
         print(f'All {len(rows)} skills are under "{NO_AUDIENCE}": none declares an audience.')
+    if args.fill_in:
+        columns, table = fill_in_table(rows)
+        needing = sum(1 for t in table if any(t[c] for c in columns[1:]))
+        print(f"Fill-in sheet: {needing} of {len(rows)} skills need at least one recommended field (fill-in.csv)")
+        print("publication-status values: " + ", ".join(f"{v} {n}" for v, n in status_counts(rows)))
     if gap is not None:
         print(f"Published but not in GitHub: {len(gap['published_only'])}")
         print(f"In GitHub but not on the published list: {len(gap['github_only'])}")
