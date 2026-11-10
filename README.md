@@ -11,7 +11,7 @@ Platform-Skills holds AHEAD-managed **skills** as plain folders in git. A skill 
 2. **Open a pull request** into `main` and fill in the template.
 3. **A reviewer who isn't you approves it.** The rule: every merge needs approval from a human code owner other than the author. Then it merges.
 
-**If a check fails,** the message says what to fix. Fix it, push again, and the checks re-run.
+**If a check fails,** the message says what to fix. Fix it, push again, and the checks re-run. ([More](#if-a-check-fails))
 
 **No GitHub account?** Send the folder to a Platform-Skills maintainer through your team's internal chat. The maintainer opens the pull request for you, and you stay the skill's `owner`. ([Details](#no-github-account))
 
@@ -37,7 +37,7 @@ description: One or two sentences on what the skill does and when to use it.
 
 # Recommended (leaving one out is a warning, not a failure)
 version: 1.0.0                       # bump it on every update
-owner: your-github-handle            # a GitHub handle or a role; no contact details
+owner: your-github-handle            # a team name or GitHub handle
 team: Your Team
 ahead-platform: [Claude, Glean]      # which platform(s) the skill is for
 audience: Who the skill is for
@@ -76,7 +76,77 @@ The rule: every merge into `main` needs approval from a **human code owner who i
 
 ## What the automated checks do
 
-They run on every pull request. They scan the repository for unsafe paths, symlinks, file types that are not allowed and files that are too large, and they read each skill folder's `SKILL.md`.
+They run on every pull request, and you can run the same check yourself (see below).
+
+- **Across the whole repository** (everything except `.git`): unsafe file and folder names, symbolic links, ZIP files (by name or by content), a `SKILL.md` anywhere other than `skills/<id>/SKILL.md`, and loose files directly in `skills/`.
+- **In each skill folder** (every folder directly under `skills/`): the folder name is a valid id; `SKILL.md` is at the top of the folder with valid frontmatter, and its `name` equals the folder name; only allowed file types; limits on file size, total size and number of files; no two names that differ only in upper/lower case.
+- **Warnings** never fail the check: missing recommended frontmatter fields, an `owner` that is an email address, and, on pull requests only, a changed skill whose `version` did not change.
+
+## If a check fails
+
+Run the check on your own computer before you push, from the repository root:
+
+```sh
+python3 -I -B tools/skillpkg.py ci --root .
+```
+
+It needs Python 3 and nothing else to install. Each problem is printed as an `ERROR` or a `WARNING`, followed by a line that says how to fix it. For example:
+
+```text
+Skill check: scanned 1 file; 1 skill folder: my-skill.
+ERROR skills/my-skill/SKILL.md:2: frontmatter name does not match the folder name (name: other-name, folder: my-skill)
+  How to fix: Make them identical: rename the folder to skills/<name>/, or change the name: line to the folder name.
+WARNING skills/my-skill/SKILL.md:1: recommended frontmatter fields are missing (version, owner, team, ahead-platform, audience, publication-status, glean-link, claude-link)
+  How to fix: Add them when you can. This is a warning; the check still passes.
+FAIL: 1 error, 1 warning. Each problem above says how to fix it.
+```
+
+- An **ERROR** fails the check. Fix it, commit, and push again; the checks re-run on the pull request.
+- A **WARNING** does not fail the check. Fix it when you can.
+- On a pull request the same messages appear in the check's log and summary. The warning that a skill's version was not increased appears only there, because it compares your skill with what is on `main`; the local command above cannot show it.
+
+<details>
+<summary>Every message, and how to fix it</summary>
+
+### Errors found anywhere in the repository
+
+| Message | How to fix |
+| --- | --- |
+| `ZIP files are not accepted in this repository` | `Unzip it into its own folder skills/<id>/ so that SKILL.md is at the top of that folder, then delete the ZIP. ZIP is an export format, not the repository format.` |
+| `symbolic links (shortcuts) are not allowed in this repository` | `Replace the link with a copy of the real file, or delete it.` |
+| `unsafe file or folder name (backslash, control character or drive letter)` | `Rename it using only letters, digits, hyphens, underscores and dots, so that it works on Windows, macOS and Linux.` |
+| `files directly in skills/ are not part of any skill` | `Move it into a skill folder skills/<id>/, or out of skills/. Only skills/README.md may sit directly in skills/.` |
+| `SKILL.md is only allowed directly inside a skill folder, at skills/<id>/SKILL.md` | `Move the skill so that this file is at skills/<id>/SKILL.md: one folder per skill, directly under skills/, with no folder in between.` |
+| `no skills/ folder found, so nothing was checked` | `Run the check from the repository root, or pass --root with the repository path.` |
+
+### Errors found in a skill folder
+
+| Message | How to fix |
+| --- | --- |
+| `folder name is not a valid skill id` | `Use 2 to 64 characters: lowercase letters, digits and hyphens, starting with a letter or digit (for example my-skill). Rename the folder and the name: field together.` |
+| `skill folder has no SKILL.md at its top level` | `Each folder directly under skills/ is one skill and needs skills/<id>/SKILL.md. If unzipping an export added an extra folder level (skills/<id>/<id>/SKILL.md), move those files up one level.` |
+| `the file must be named SKILL.md, in capital letters` | `Rename the file to SKILL.md.` |
+| `two paths in this skill differ only in upper/lower case` | `Rename or remove one of them; they collide on Windows and macOS.` |
+| `file type is not allowed in a skill folder` | `Allowed: .css .csv .html .jpg .json .md .png .py .txt .yaml .yml and LICENSE files. Remove the file or convert it to an allowed type.` |
+| `file is larger than the 5 MB per-file limit` | `Make the file smaller or remove it. Keep large data outside the repository and link to it from SKILL.md.` |
+| `skill folder is larger than the 25 MB total limit` | `Remove or shrink files. Keep large data outside the repository and link to it from SKILL.md.` |
+| `skill folder has more than 200 files` | `Remove files the skill does not need, or combine small files.` |
+| `SKILL.md is not valid UTF-8 text` | `Save SKILL.md with UTF-8 encoding.` |
+| `SKILL.md does not start with a frontmatter block` | `Make the first line of SKILL.md exactly ---, then add name: and description: lines, then a line with only ---.` |
+| `SKILL.md frontmatter block is not closed` | `Add a line with only --- after the last frontmatter field.` |
+| `frontmatter field appears more than once` | `Keep one line for the field and delete the others.` |
+| `required frontmatter field is missing or empty` | `Add it to the frontmatter. name: must equal the folder name; description: says what the skill does and when to use it.` |
+| `frontmatter name does not match the folder name` | `Make them identical: rename the folder to skills/<name>/, or change the name: line to the folder name.` |
+
+### Warnings (the check still passes)
+
+| Message | How to fix |
+| --- | --- |
+| `recommended frontmatter fields are missing` | `Add them when you can. This is a warning; the check still passes.` |
+| `owner contains an email address, and this repository is public` | `Consider a team name or GitHub handle instead. This is a warning; the check still passes.` |
+| `skill files changed but version was not increased` | `Increase version: in SKILL.md (for example 1.0.0 to 1.0.1); git history is the version history. This is a warning; the check still passes.` |
+
+</details>
 
 ## What belongs here, and what does not
 
