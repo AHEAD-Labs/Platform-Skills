@@ -1,0 +1,312 @@
+{
+  "brand_system_version": "AHEAD Brand Guidelines 2026 (AHEAD_StyleGuide_2026) and AHEAD PPT Template 2026 system (Brand Skill Update, November 2026)",
+  "registry_version": "1.4.0",
+  "refresh_status": "2026-style-guide-in-force; 2024 values are stale and fail validation",
+  "colors": {
+    "source": "AHEAD_StyleGuide_2026, Color Palette",
+    "primary": {
+      "deep_navy": "0C243B",
+      "navy": "123A61",
+      "ahead_blue": "009FDC",
+      "electric_blue": "0B52ED",
+      "impact_green": "33CC99",
+      "coral": "FC794D"
+    },
+    "secondary": {
+      "sky_blue": "9CD3FF",
+      "pale_teal": "ABEEE6",
+      "light_orange": "FFA26A",
+      "ice_blue": "E8F1FC"
+    },
+    "brand_team_only_accents": {
+      "note": "Carried over from the 2024 system. The 2026 guide does not restate accents; keep them off generated deliverables until Brand Marketing says otherwise.",
+      "pale_blue": "9DE1F7",
+      "pale_green": "99E2CC",
+      "coral_2024": "EB6056",
+      "orange_2024": "EC8058",
+      "gold": "FCCA49",
+      "deep_indigo": "333399",
+      "amber": "ECA154"
+    },
+    "neutrals": {
+      "light_gray": "E8F1FC",
+      "white": "FFFFFF",
+      "charcoal": "2A2A2A",
+      "dark_gray": "333333",
+      "footer_gray": "8C9BAB",
+      "black": "000000"
+    },
+    "legacy_2024": {
+      "note": "Stale 2024 palette. Never used in new work; the validator fails these values. Use the 2026 palette.",
+      "ahead_blue": "009FDC",
+      "bright_blue": "1C4CBF",
+      "impact_green": "00B388",
+      "navy": "123A61",
+      "light_blue": "67C3E9",
+      "light_teal": "6ECEB2",
+      "deep_teal": "006666",
+      "deep_navy": "102033",
+      "indigo": "5663C0",
+      "forest_teal": "1A4344",
+      "ppt_engine_light_gray": "ECF1F3",
+      "gradient_blue": "1369CE",
+      "ppt_light_gray_2024": "EBF0F2"
+    },
+    "primary_logo_safe_backgrounds": [
+      "FFFFFF",
+      "0C243B",
+      "123A61"
+    ],
+    "template_theme_colors": {
+      "General (2026-AHEAD-PPT-Template, Dusk style)": {
+        "theme_name": "AHEAD - 2026",
+        "slots": {
+          "dk1": "0C243B",
+          "lt1": "FFFFFF",
+          "dk2": "123A61",
+          "lt2": "E8F1FC",
+          "accent1": "0B51ED",
+          "accent2": "FB7440",
+          "accent3": "009FDC",
+          "accent4": "B9EBE7",
+          "accent5": "FFA269",
+          "accent6": "33CC99",
+          "hlink": "0B51ED",
+          "folHlink": "808AD5"
+        },
+        "approved_by": "Skill owner on behalf of Brand, 2026-11-11",
+        "note": "Approved in decks built on the general template. Five values differ from the 2026 palette: 0B51ED (accent1, links), FB7440 (accent2), B9EBE7 (accent4), FFA269 (accent5), and 808AD5 (followed-link color only). When choosing colors yourself, prefer the 2026 palette and the chart series order."
+      }
+    }
+  },
+  "chart": {
+    "series_order": [
+      "0B52ED",
+      "009FDC",
+      "33CC99",
+      "123A61",
+      "FC794D",
+      "9CD3FF",
+      "ABEEE6"
+    ],
+    "series_order_status": "Confirmed by the Brand Team. Navy #123A61 added after Impact Green (skill owner, 2026-11-09)."
+  },
+  "gradients": {
+    "rule": "Monochromatic. Use no more than about 5% of the full gradient. Never use the center of the gradient. No fixed angle: the 2024 69-degree rule is retired. In decks, always use the published gradient image file for the theme; never recreate a gradient.",
+    "max_range_pct": 5,
+    "avoid_center": true,
+    "fixed_angle_deg": null
+  },
+  "typography": {
+    "source": "AHEAD_StyleGuide_2026, Typography; Brand guidance 2026-11-12 (user-created materials use Aptos, Verdana backup; Parabolica is marketing-owned)",
+    "office_only": "Aptos",
+    "web_safe_fallback": "Verdana",
+    "legacy_office_fonts": [
+      "Tenorite"
+    ],
+    "legacy_brand_fonts": [
+      "Poppins",
+      "PT Serif"
+    ],
+    "max_font_families_per_document": 2,
+    "reference_sizes": {
+      "header_pt": 45,
+      "subheader_pt": 38,
+      "slide_lede_pt": 18,
+      "body_pt": 12,
+      "caption_pt": 10,
+      "stat_callout_pt": 42,
+      "footer_pt": 8
+    },
+    "user_materials": "Aptos",
+    "user_materials_backup": "Verdana",
+    "marketing_only": "Parabolica",
+    "default_weight": "Regular"
+  },
+  "geometry": {
+    "slide_width_in": 10.0,
+    "slide_height_in": 5.625,
+    "margin_in": 0.5,
+    "content_x1": 0.5,
+    "content_x2": 9.5,
+    "content_y1": 0.85,
+    "content_y2": 5.1,
+    "header_bar_h": 0.75,
+    "footer_y": 5.2,
+    "logo_clearspace_rule": "no less than the height of the E in the logo"
+  },
+  "deck_logo_placement": {
+    "source": "AHEAD PPT Template 2026, content slide (Brand Skill Update - November 2026)",
+    "position": "bottom-right, same place on every content slide",
+    "variant_on_white": "AHEAD-Logo-WEB.png (navy)",
+    "variant_on_dark_or_photo": "AHEAD-Rev-Logo-WEB.png (reversed/white); AHEAD-KO-Logo-WEB.png (full-white knockout) only when the reversed logo cannot be used",
+    "width_in": 0.57,
+    "height_in": 0.12,
+    "width_pct_of_slide": 5.7,
+    "aspect_ratio_locked": true,
+    "left_in": 9.09,
+    "right_in": 9.66,
+    "top_in": 5.19,
+    "bottom_in": 5.31,
+    "vertical_center_in": 5.25,
+    "right_margin_in": 0.34,
+    "gradient_bar_top_in": 5.46,
+    "gradient_bar_height_in": 0.17,
+    "clearance_logo_to_bar_in": 0.14,
+    "footer_left": {
+      "slide_number_x_in": 0.3,
+      "label_x_in": 0.57,
+      "label_text_in_template": "AHEAD PPT TEMPLATE 2026",
+      "replace_with": "Confidential - Proprietary to AHEAD",
+      "label_style": "small, letter-spaced caps",
+      "shares_vertical_band_with_logo": true
+    },
+    "prefer": "Read the position from the template layout. Use these numbers as a check, or when a layout is not available.",
+    "padding_note": "Sizes measure the visible logo. Bundled PNGs (1072x269) have transparent padding (visible bbox 6,32,1062,248 px)."
+  },
+  "shapes": {
+    "source": "AHEAD_StyleGuide_2026, Brand Elements",
+    "elements": [
+      "pill",
+      "arrow",
+      "swoosh",
+      "tiles",
+      "icons",
+      "shapes"
+    ],
+    "pill": {
+      "allowed_angles_deg": [
+        90,
+        180
+      ],
+      "singular_only": true,
+      "fills": [
+        "solid palette color",
+        "texture",
+        "photography"
+      ],
+      "full_pill_only_when_functional": true,
+      "default_button_shape": true
+    },
+    "arrow": {
+      "points_left": false,
+      "right_angles_only": true,
+      "fills": [
+        "solid color",
+        "gradient"
+      ],
+      "photo_fill": false,
+      "singular_only": true
+    },
+    "swoosh": {
+      "fills": [
+        "photography",
+        "solid palette color"
+      ]
+    },
+    "application": "Apply shapes zoomed in, rarely showing the full shape. Use borders and page breaks as natural interruptions.",
+    "prohibited_fills": [
+      "dashed outline",
+      "dotted outline",
+      "0%-100% gradient fill"
+    ],
+    "max_treatments_per_visual": 3
+  },
+  "backgrounds": {
+    "default_deck": "FFFFFF",
+    "default_content_slide": "FFFFFF",
+    "executive_keynote_only": [
+      "102033",
+      "123A61",
+      "0C243B"
+    ]
+  },
+  "deck_templates": {
+    "source_folder": "PowerPoint Templates (Official-Intranet-Files > ARCHIE Files > Marketing > Presentations and Visuals > Templates > PowerPoint Templates)",
+    "default": "2026-AHEAD-PPT-Template.pptx",
+    "cobrand": "Cobranded Template/AHEAD-PPT-Template_CoBrand.pptx",
+    "executive_folder": "AHEAD Executive Overviews (Key Presentations)",
+    "executive_files": {
+      "dark": "2026 AHEAD-Exec-Overview-Dark.pptx",
+      "light": "2026 AHEAD-Exec-Overview-Light.pptx",
+      "updated": "Updated-2026-AHEAD-Exec-Deck.pptx"
+    },
+    "executive_default_when_unspecified": "updated (as finished content)",
+    "gradient_image_folder": "PPT-Gradients (Logos and Brand Guidelines > Style Guide)",
+    "gradient_images": {
+      "general (Dusk style)": "PPT-Gradient_Dusk.jpg"
+    },
+    "cobrand_gradient_image": "none published",
+    "executive_files_role": "Finished content, not templates. Deliver or insert slides as-is with light edits; never build new slides on them. New executive content uses the general template.",
+    "bundled_fallback": {
+      "path": "assets/templates/2026-AHEAD-PPT-Template.pptx",
+      "template": "2026-AHEAD-PPT-Template.pptx (general, Dusk style)",
+      "supplied": "2026-11-12 by the skill owner; the version Brand published to SharePoint on 2026-11-11",
+      "sha256": "dc400005ab9c7ff2491354b136bc9bf41b8d2c6b14c3b8258f6ed3254da300db",
+      "sample_slides": 37,
+      "layouts": 20,
+      "use_when": "SharePoint can't be read for any deck template, including when the user asked for CoBrand. Live SharePoint file wins when readable. Not a substitute for the Executive Overviews decks.",
+      "cleanup": "Replace 'AHEAD PPT TEMPLATE 2026' with the confidential footer in slides, layouts and master; set Arial, PT Sans, PT Serif, Poppins, Tenorite to Aptos; set #424242 to #333333."
+    },
+    "default_style": "Dusk",
+    "default_item_id": "01B5SZVP4F3EBW7OHT2FEJ6WQJDTZFA5QO",
+    "cobrand_item_id": "01B5SZVP4Y5GBI2QGB4VA24JC6SZSH7OTF",
+    "retired_themes": {
+      "themes": [
+        "Dayglow",
+        "Meridian",
+        "Sunset",
+        "Midnight"
+      ],
+      "retired": "2026-11-12 (removed from SharePoint by Brand; may return later)",
+      "also_retired": [
+        "AHEAD-PPT-Template_Dusk.pptx (superseded by the general template)",
+        "AHEAD-PPT-Template_ALL (all-themes file)"
+      ],
+      "on_request": "Build on the general template and say the theme isn't available right now."
+    }
+  },
+  "word_template": {
+    "default": "THE Word Template Final.dotx",
+    "folder": "Word Templates (Official-Intranet-Files > ARCHIE Files > Marketing > Presentations and Visuals > Templates)",
+    "letterhead": "Letters use THE Word Template Final until Brand publishes a 2026 letterhead."
+  },
+  "prohibited_terms": [
+    "VAR",
+    "value-added reseller",
+    "value added reseller",
+    "reseller",
+    "distributor",
+    "box pusher",
+    "hardware vendor"
+  ],
+  "approved_descriptors": [
+    "Systems Integrator",
+    "IT Solutions Provider",
+    "IT Services Company",
+    "Technology Solutions Partner",
+    "Managed Services Provider",
+    "Cloud Solutions Provider"
+  ],
+  "taglines": {
+    "primary": "Accelerate Your Impact",
+    "secondary": "Digital Platforms for the Modern Enterprise",
+    "logo_clearspace_exception": "Learn. Grow. Achieve."
+  },
+  "footers": {
+    "internal": "Confidential - Proprietary to AHEAD",
+    "client_formal": "Confidential to AHEAD and [Client Short Name] — Page X of Y",
+    "deck_2026_template_label": "AHEAD PPT TEMPLATE 2026"
+  },
+  "contacts": {
+    "brand_approvals": "brand@ahead.com",
+    "brand_marketing_director": "sam.mock@ahead.com",
+    "brand_design_lead": "sarah.stiefelmayer@ahead.com",
+    "skill_owner": "grace.gallagher@ahead.com"
+  },
+  "logo_source_of_truth": "AHEAD png Logos folder is canonical; bundled logos are fallback copies.",
+  "review_note_chat_only": "Evergreen review is a chat note naming brand@ahead.com. Never insert a review block into the deliverable.",
+  "no_stale_fallback": "Never use 2024 or earlier files, instructions, or guidelines for design, even as a fallback. Decks that can't reach SharePoint use the bundled general template.",
+  "sharepoint_reconnect_instruction": "In Glean, go to Settings > Connectors and authorize SharePoint access.",
+  "messaging_status": "messaging-voice.md confirmed current by Brand on 2026-11-11 (2026 upgrade builds on the 2024 guide)."
+}
