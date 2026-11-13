@@ -1,9 +1,6 @@
-# PLACEHOLDER: no code owners are assigned yet, so this file enforces nothing.
-#
-# Reviewers for this repository have not been confirmed. Once they are, add
-# rules below using real GitHub users or teams, for example:
-#
-#   /skills/    @<org>/<team>
-#
-# To enforce reviews, branch protection must also require code owner review.
-# Do not add guessed usernames or team names.
+# Code owners for Platform-Skills: Joe (@JoeVaderRules) and Grace (@babiryegrace20).
+# Handles verified 2026-10-19: both hold admin on this repo and are the requested reviewers on the
+# Skills Auditor PRs (Skills-Marketplace #114, #119). Approval from either one satisfies a rule.
+# Meredith has admin access for visibility only; she is intentionally NOT a code owner or reviewer.
+# Takes effect once the main ruleset enables "Require review from Code Owners" (docs/PRIORITY-1.md).
+*       @JoeVaderRules @babiryegrace20

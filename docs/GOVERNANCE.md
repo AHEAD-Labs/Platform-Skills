@@ -56,3 +56,8 @@ gh api repos/AHEAD-Labs/Platform-Skills/actions/permissions/workflow
 ```
 
 An empty list from the first command means `main` has no enforced rules. In the second, `default_workflow_permissions` should be `read` and `can_approve_pull_request_reviews` should be `false`.
+
+## Reviewers and status
+
+- Code owners and reviewers: Joe (`@JoeVaderRules`) and Grace (`@babiryegrace20`). Meredith has admin access for visibility only. She is not a code owner or a pull request reviewer. The handles are set in [`.github/CODEOWNERS`](../.github/CODEOWNERS); confirm them before relying on them.
+- As of 2026-11-10, `main` has no branch protection and the ruleset above is not yet applied. The checklist for applying it is in [PRIORITY-1.md](PRIORITY-1.md).
